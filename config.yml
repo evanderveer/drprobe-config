@@ -1,0 +1,218 @@
+#--------------------------------#
+# Configuration file for modified command line DrProbe simulations
+# 
+#--------------------------------#
+--- 
+#--------------------------------#
+# CELSLC
+#--------------------------------#
+
+#Input as a .cif or .cel file
+input: BTO_Pm-3m.cif
+
+#Slice file base name (i.e. base --> base_001.sli)
+output: test
+
+#Export projected potentials either as .pot or .sli files
+export-potentials:
+    as-pot-files: false
+    as-sli-files: false
+
+#Projection axis
+projection:
+    activate: false
+    axis: [1,0,0]
+    vertical: [0,0,1]
+    supercell-size: [1,1,1]
+    
+#Shift atoms in the unit cell
+atom-shifts:
+    activate: true
+    shifts: [0.1,0.1,0.1]
+    
+#High tension
+high-tension: 300.0
+
+#Number of samples for the phase gratings
+samples:
+    x-samples: 512
+    y-samples: 512
+    use-equidistant: false
+    z-samples: 5
+    reverse: false
+
+#Use random thermal variations for each slice     
+frozen-lattice:
+    activate: true
+    number-of-variants: 30
+
+#Single slice mode
+single-slice:
+    activate: false
+    slice-number: 1
+
+#Apply Debye-Waller factors (HRTEM, BF/ABF-STEM only)
+debye-waller: false
+
+#Turn on absorption potentials, either using method due to 
+#Weickenmeier & Kohl [Acta Cryst. A47 (1991) p. 590-597] 
+#or with a user-specified value
+absorption:
+    activate: false
+    use_wk: true
+    value: 0.085 #When not using W&K
+    
+#--------------------------------#
+# MSA
+#--------------------------------#
+
+#Simulate HRTEM image instead of STEM
+ctem: false
+
+#Output STEM simulation results as .txt file 
+text-output: false
+
+#Output a single 3d data file for each detector
+3d-output: true
+
+#Output wavefunction files
+wavefunction-output: 
+    activate: false
+    average-over-frozen-lattice-variants: false
+    output-in-fourier-space: false
+
+#Output detector functions in Fourier space
+detector-function-ouput: false
+
+#Use large-angle propagators
+use-large-angle-propagators: false
+
+#Use FFTW_ESTIMATE as FFT planner flag
+use-FFTW-ESTIMATE: false
+
+#Show additional output
+verbose: false
+
+#Show debugging output
+debug: false
+
+#Do not show any output
+silent: false
+
+#Probe forming aperture radius in mrad, asymmetry and smoothness
+aperture:
+    radius: 25.0
+    asymmetry:
+        amount: 0.0
+        angle: 0.0
+    smoothness: 0.0
+    
+#Detector setup
+detector:
+    number-of-detectors: 2
+    detectors:
+        HAADF: 
+            inner-radius: 80.0 #mrad
+            outer-radius: 200.0 #mrad
+            azimuth-start: 0.0 #deg
+            azimuth-end: 360.0 #deg
+            x-center: 0.0 #mrad
+            y-center: 0.0 #mrad
+            use-sensitivity: false
+            sensitivity-file: detector-sensitivity-haadf.txt
+        BF: 
+            inner-radius: 0.0 #mrad
+            outer-radius: 20.0 #mrad
+            azimuth-start: 0.0 #deg
+            azimuth-end: 360.0 #deg
+            x-center: 0.0 #mrad
+            y-center: 0.0 #mrad
+            use-sensitivity: false
+            sensitivity-file: detector-sensitivity-bf.txt
+        DF4-A: 
+            inner-radius: 30.0 #mrad
+            outer-radius: 70.0 #mrad
+            azimuth-start: 0.0 #deg
+            azimuth-end: 90.0 #deg
+            x-center: 0.0 #mrad
+            y-center: 0.0 #mrad
+            use-sensitivity: false
+            sensitivity-file: detector-sensitivity-df4-a.txt
+            
+#Effective source radius for spatial coherence 
+source-radius: 0.055 #nm
+
+#Effective focus spread for temporal coherence 
+focus-spread: 
+    value: 1.5 #nm
+    kernel-size: 2
+    kernel-steps: 7
+
+#Probe aberrations
+aberrations:
+    - 0 0 #Shift
+    - 1 0 #Defocus
+    - 1 1 #2-fold astigmatism
+    - 0 2 #Coma
+    - 0 0 #...
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    - 0 0
+    
+#Tilts
+tilt:
+    x-object: 0
+    y-object: 0
+    x-beam: 0
+    y-beam: 0
+    
+#Scan frame
+scan-frame:
+    offset:
+        x: 0 #nm
+        y: 0 #nm
+    size:
+        x: 0 #nm
+        y: 0 #nm
+    rotation: 0 #deg
+    resolution:
+        x: 55 #rows
+        y: 80 #columns
+        
+#Turn on convolutions due to spatial and temporal incoherence        
+convolutions:
+    focus-spread: false
+    source-size: true
+    
+#Supercell repeat factors
+repeat-supercell:
+    x: 2
+    y: 2
+
+#Minimum number of frozen lattice variants used
+frozen-lattice-variants: 5
+
+#Readout period
+readout-period: 
+    one-unit-cell: true
+    full-thickness-only: false
+    fixed-number: 5 #slices
+
+#Total thickness to simulate
+final-thickness: 30 #unit cells
