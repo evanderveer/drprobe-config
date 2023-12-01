@@ -144,9 +144,9 @@ source-radius: 0.055 #nm
 
 #Effective focus spread for temporal coherence 
 focus-spread: 
-    value: 1.5 #nm
-    kernel-size: 2
-    kernel-steps: 7
+    value: 18 #nm
+    kernel-size: 21
+    kernel-steps: 3
 
 #Probe aberrations
 aberrations:
@@ -177,10 +177,12 @@ aberrations:
     
 #Tilts
 tilt:
-    x-object: 0
-    y-object: 0
-    x-beam: 0
-    y-beam: 0
+    object:
+        x: 0
+        y: 0
+    beam: 
+        x: 0
+        y: 0
     
 #Scan frame
 scan-frame:
@@ -198,7 +200,9 @@ scan-frame:
 #Turn on convolutions due to spatial and temporal incoherence        
 convolutions:
     focus-spread: false
-    source-size: true
+    source-size: 
+        activate: true
+        profile: "gaussian" #gaussian or lorentzian
     
 #Supercell repeat factors
 repeat-supercell:

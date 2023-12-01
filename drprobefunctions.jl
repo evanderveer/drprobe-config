@@ -85,12 +85,76 @@ function make_msa_prm_file(config)
     end
 
     write(f, "'[Multislice Parameters]'\n")
+    write(f, "$(config["tilt"]["object"]["x"])\n")
+    write(f, "$(config["tilt"]["object"]["y"])\n")
+
+    write(f, "$(config["scan-frame"]["offset"]["x"])\n")
+    write(f, "$(config["scan-frame"]["offset"]["y"])\n")
+
+    write(f, "$(config["scan-frame"]["size"]["x"])\n")
+    write(f, "$(config["scan-frame"]["size"]["y"])\n")
+
+    write(f, "$(config["scan-frame"]["rotation"])\n")
+
+    write(f, "$(config["scan-frame"]["resolution"]["x"])\n")
+    write(f, "$(config["scan-frame"]["resolution"]["y"])\n")
+
+    focus_spread = config["convolutions"]["focus-spread"] ? 1 : 0
+    write(f, "$focus_spread\n")
+
+    if config["convolutions"]["source-size"]["activate"]
+        if config["convolutions"]["source-size"]["profile"] == "gaussian"
+            source_size = 1
+        else
+            source_size = 2
+        end
+    else
+        source_size = 0
+    end
+    write(f, "$source_size\n")
+
+    write(f, "$(config["repeat-supercell"]["x"])\n")
+    write(f, "$(config["repeat-supercell"]["y"])\n")
+    write(f, "1\n") #Supercell repeat factor along z, obsolete
+
+    write(f, "'./$(config["output"])'\n")
+    num_sli_files = number_of_slice_files(config["output"])
+    write(f, "$num_sli_files\n")
+
+    write(f, "$(config["frozen-lattice-variants"])\n")
     
+    write(f, "$(readout_period(config["readout-period"], num_sli_files))\n")
+
+    max_number_of_slices = num_sli_files * config["final-thickness"]
+    write(f, "$max_number_of_slices\n")
+
+    for _ in 1:config["final-thickness"]
+        for i in 1:num_sli_files
+            write(f, "$i\n")
+        end
+    end
+
     close(f)
 end
 
-function make_msa_command(config)
+function readout_period(period_dict, num_sli_files)
+    if period_dict["full-thickness-only"]
+        return 0
+    elseif period_dict["one-unit-cell"]
+        return num_sli_files
+    else
+        return period_dict["fixed-number"]
+    end 
+end
 
+function number_of_slice_files(base_name)
+    all_files = readdir()
+    regexs = ["^", base_name, raw"_\d\d\d.sli$"]
+    sum(occursin.(Regex(join(regexs, "")), all_files))
+end
+
+function make_msa_command(config)
+    return ``
 end
 
 function make_detector_prm_file(config)
@@ -119,10 +183,11 @@ function run_drprobe(config)
     cd(temp_dir)
 
     celslc_command = build_celslc_command(config)
+    run(celslc_command)
     make_detector_prm_file(config)
     make_msa_prm_file(config)
     msa_command = make_msa_command(config)
-    run(celslc_command)
+    
 
     cd("..")
 end
