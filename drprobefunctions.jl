@@ -153,8 +153,32 @@ function number_of_slice_files(base_name)
     sum(occursin.(Regex(join(regexs, "")), all_files))
 end
 
-function make_msa_command(config)
-    return ``
+function make_msa_command(config, input::Bool)
+    prm_file = `-prm msa.prm`
+    base_output = config["output"]
+    out_file = input ? `-out $base_output-convoluted.dat` : `-out $base_output.dat`
+
+    in_file = input ? `-in $base_output.dat` : ``
+
+    beam_tilt = `-tx $(config["tilt"]["beam"]["x"]) -ty $(config["tilt"]["beam"]["y"])`
+
+    #TODO: Figure out absorption and Debye-Waller factors
+
+    ctem = config["ctem"] ? `/ctem` : ``
+    text_output = config["text-output"] ? `/txtout` : ``
+    three_d_output = config["3d-output"] ? `/3dout` : ``
+    if config["wavefunction-output"]["activate"] 
+        wave = config["wavefunction-output"]["average-over-frozen-lattice-variants"] ? `/avwave` : `/wave`
+        wave = config["wavefunction-output"]["output-in-fourier-space"] ? `/avwaveft` : wave
+    end
+    detimg = config["detector-function-ouput"] ? `/detimg` : ``
+    lapro = config["use-large-angle-propagators"] ? `/lapro` : ``
+    dftest = config["use-FFTW-ESTIMATE"] ? `/dftest` : ``
+    verbose = config["verbose"] ? `/verbose` : ``
+    debug = config["debug"] ? `/debug` : ``
+    silent = config["silent"] ? `/silent` : ``
+
+    `msa $prm_file $out_file $in_file $beam_tilt $ctem $text_output $three_d_output $wave $detimg $lapro $dftest $verbose $debug $silent`
 end
 
 function make_detector_prm_file(config)
@@ -177,17 +201,26 @@ function make_detector_prm_file(config)
     close(f)
 end
 
-function run_drprobe(config)
+function run_drprobe(config; debug=false; output_folder=pwd())
     temp_dir = mktempdir(pwd())
     cp(config["input"], temp_dir*"/"*config["input"])
     cd(temp_dir)
 
     celslc_command = build_celslc_command(config)
-    run(celslc_command)
-    make_detector_prm_file(config)
-    make_msa_prm_file(config)
-    msa_command = make_msa_command(config)
+    println("Running CELSLC with command: ")
+    println(celslc_command)
+    debug || run(celslc_command)
     
+    if config["run-msa"]
+        make_detector_prm_file(config)
+        make_msa_prm_file(config)
+        msa_command = make_msa_command(config)
+        println("Running MSA with command: ")
+        println(msa_command)
+        debug || run(msa_command)
+    end
+    
+    debug || cleanup(config)
 
     cd("..")
 end
