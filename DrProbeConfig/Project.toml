@@ -1,0 +1,7 @@
+name = "DrProbeConfig"
+uuid = "0a6cd471-1257-429e-b8c0-364a01e6572b"
+authors = ["p300058 "]
+version = "0.1.0"
+
+[deps]
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"

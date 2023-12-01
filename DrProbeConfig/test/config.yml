@@ -71,7 +71,7 @@ absorption:
 #--------------------------------#
 
 #Run MSA (true) or only CELSLC (false)
-run-msa: false
+run-msa: true
 
 #Simulate HRTEM image instead of STEM
 ctem: false
@@ -80,7 +80,7 @@ ctem: false
 text-output: false
 
 #Output a single 3d data file for each detector
-3d-output: true
+3d-output: false
 
 #Output wavefunction files
 wavefunction-output: 
@@ -201,8 +201,8 @@ scan-frame:
         y: 0 #nm
     rotation: 0 #deg
     resolution:
-        x: 55 #rows
-        y: 80 #columns
+        x: 10 #rows
+        y: 10 #columns
         
 #Turn on convolutions due to spatial and temporal incoherence        
 convolutions:
@@ -217,7 +217,7 @@ repeat-supercell:
     y: 2
 
 #Minimum number of frozen lattice variants used
-frozen-lattice-variants: 5
+minimum-frozen-lattice-variants: 5
 
 #Readout period
 readout-period: 
@@ -226,4 +226,4 @@ readout-period:
     fixed-number: 5 #slices
 
 #Total thickness to simulate
-final-thickness: 30 #unit cells
+final-thickness: 1 #unit cells

@@ -121,7 +121,12 @@ function make_msa_prm_file(config)
     num_sli_files = number_of_slice_files(config["output"])
     write(f, "$num_sli_files\n")
 
-    write(f, "$(config["frozen-lattice-variants"])\n")
+    if config["frozen-lattice"]["activate"]
+        write(f, "$(config["frozen-lattice"]["number-of-variants"])\n")
+        write(f, "$(config["minimum-frozen-lattice-variants"])\n")
+    else
+        write(f, "1\n1\n")
+    end
     
     write(f, "$(readout_period(config["readout-period"], num_sli_files))\n")
 
@@ -130,7 +135,7 @@ function make_msa_prm_file(config)
 
     for _ in 1:config["final-thickness"]
         for i in 1:num_sli_files
-            write(f, "$i\n")
+            write(f, "$(i-1)\n")
         end
     end
 
@@ -153,7 +158,7 @@ function number_of_slice_files(base_name)
     sum(occursin.(Regex(join(regexs, "")), all_files))
 end
 
-function make_msa_command(config, input::Bool)
+function make_msa_command(config, input::Bool = false)
     prm_file = `-prm msa.prm`
     base_output = config["output"]
     out_file = input ? `-out $base_output-convoluted.dat` : `-out $base_output.dat`
@@ -170,6 +175,8 @@ function make_msa_command(config, input::Bool)
     if config["wavefunction-output"]["activate"] 
         wave = config["wavefunction-output"]["average-over-frozen-lattice-variants"] ? `/avwave` : `/wave`
         wave = config["wavefunction-output"]["output-in-fourier-space"] ? `/avwaveft` : wave
+    else
+        wave = ``
     end
     detimg = config["detector-function-ouput"] ? `/detimg` : ``
     lapro = config["use-large-angle-propagators"] ? `/lapro` : ``
@@ -201,7 +208,24 @@ function make_detector_prm_file(config)
     close(f)
 end
 
-function run_drprobe(config; debug=false; output_folder=pwd())
+function cleanup(config, temp_folder, output_folder)
+    println("Cleaning up the mess")
+    all_files = readdir(temp_folder)
+    files_to_move = all_files[occursin.(r"\.dat|\.sli", all_files)]
+    for file in files_to_move
+        mv(joinpath(temp_folder, file), joinpath(output_folder, file))
+    end
+    rm(temp_folder, recursive=true)
+end
+
+function run_drprobe(
+    config_file; 
+    debug=false, 
+    output_folder=pwd(), 
+    no_cleanup=false
+    )
+    cd(dirname(config_file))
+    config = YAML.load_file(basename(config_file))
     temp_dir = mktempdir(pwd())
     cp(config["input"], temp_dir*"/"*config["input"])
     cd(temp_dir)
@@ -218,9 +242,13 @@ function run_drprobe(config; debug=false; output_folder=pwd())
         println("Running MSA with command: ")
         println(msa_command)
         debug || run(msa_command)
+    else
+        println("MSA deactivated, only running CELSLC")
     end
-    
-    debug || cleanup(config)
 
     cd("..")
+
+    debug || no_cleanup || cleanup(config, temp_dir, output_folder);
+    println(" ")
 end
+
