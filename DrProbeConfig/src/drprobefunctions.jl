@@ -210,6 +210,7 @@ end
 
 function cleanup(config, temp_folder, output_folder)
     println("Cleaning up the mess")
+    output_folder = mkdir(string(now()))
     all_files = readdir(temp_folder)
     files_to_move = all_files[occursin.(r"\.dat|\.sli", all_files)]
     for file in files_to_move
@@ -252,7 +253,7 @@ function run_drprobe(
     end
 
     cd(start_dir)
-
+    
     debug || no_cleanup || cleanup(config, joinpath(dirname(config_file), temp_dir), output_folder);
     println(" ")
 end
@@ -267,9 +268,6 @@ function run_drprobe_multithreaded(
     cd(dirname(config_file))
     config = YAML.load_file(basename(config_file))
     temp_dir = mktempdir(pwd())
-    if isdir(temp_dir) 
-        println("TEmp exists") 
-    end
     cp(config["input"], temp_dir*"/"*config["input"])
     cd(temp_dir)
 
@@ -296,7 +294,6 @@ function msa_multithread(
     debug
     )
     Threads.@threads for line_number in 1:config["scan-frame"]["resolution"]["y"]
-        println("Calculating line $line_number")
         msa_line(deepcopy(config), debug, line_number)
     end
 end
@@ -314,5 +311,31 @@ function msa_line(config, debug, line_number)
 end
 
 function stitch_lines(config)
-    return
+    filelist = readdir()
+    match_list = match.(r"test_([0-9])_(.+)_sl([0-9]+)\.dat", filelist)
+    match_list = match_list[isnotnothing.(match_list)]
+
+    detectors = Set(getindex.(match_list, 2))
+    slice_nums = Set(getindex.(match_list, 3))
+
+    for detector in detectors
+        for slice in slice_nums
+            stitch_image(config, detector, slice)
+        end
+    end
+end
+
+isnotnothing(value) = isnothing(value) |>  !
+
+function stitch_image(config, detector, slice)
+    output_size = (config["scan-frame"]["resolution"]["y"], 
+                   config["scan-frame"]["resolution"]["x"])
+
+    output_data = Matrix{Float32}(undef, output_size...)
+    for line in 1:config["scan-frame"]["resolution"]["y"]
+        line_filename = "$(config["output"])_$(line)_$(detector)_sl$(slice).dat"
+        read!(line_filename, output_data[line, :])
+    end
+    out_filename = "$(config["output"])_$(detector)_sl$(slice).dat"
+    write(out_filename, output_data)
 end
