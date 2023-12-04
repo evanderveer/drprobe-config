@@ -116,7 +116,7 @@ aperture:
     
 #Detector setup
 detector:
-    number-of-detectors: 2
+    number-of-detectors: 3
     detectors:
         HAADF: 
             inner-radius: 80.0 #mrad
@@ -158,9 +158,9 @@ focus-spread:
 #Probe aberrations
 aberrations:
     - 0 0 #Shift
-    - 1 0 #Defocus
-    - 1 1 #2-fold astigmatism
-    - 0 2 #Coma
+    - 0 0 #Defocus
+    - 0 0 #2-fold astigmatism
+    - 0 0 #Coma
     - 0 0 #...
     - 0 0
     - 0 0
@@ -197,12 +197,12 @@ scan-frame:
         x: 0 #nm
         y: 0 #nm
     size:
-        x: 0 #nm
-        y: 0 #nm
+        x: 0.5 #nm
+        y: 0.5 #nm
     rotation: 0 #deg
     resolution:
-        x: 10 #rows
-        y: 10 #columns
+        x: 50 #rows
+        y: 50 #columns
         
 #Turn on convolutions due to spatial and temporal incoherence        
 convolutions:
@@ -226,4 +226,4 @@ readout-period:
     fixed-number: 5 #slices
 
 #Total thickness to simulate
-final-thickness: 1 #unit cells
+final-thickness: 10 #unit cells

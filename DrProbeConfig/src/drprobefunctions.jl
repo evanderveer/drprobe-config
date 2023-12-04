@@ -60,7 +60,7 @@ function build_celslc_command(config)
 end
 
 function make_msa_prm_file(config)
-    f = open("msa.prm", "w")
+    f = haskey(config, "scan-line") ? open("msa$(config["scan-line"]).prm", "w") : open("msa.prm", "w")
     write(f, "'[Microscope Parameters]'\n")
     config["aperture"]["radius"]
     write(f, "$(config["aperture"]["radius"]),\
@@ -159,8 +159,15 @@ function number_of_slice_files(base_name)
 end
 
 function make_msa_command(config, input::Bool = false)
-    prm_file = `-prm msa.prm`
-    base_output = haskey(config, "scan-line") ? "$(config["output"])_$(config["scan-line"])" : config["output"]
+
+    if haskey(config, "scan-line")
+        prm_file = `-prm msa$(config["scan-line"]).prm`
+        base_output = "$(config["output"])_$(config["scan-line"])"
+    else
+        prm_file = `-prm msa.prm`
+        base_output = config["output"]
+    end
+
     out_file = input ? `-out $base_output-convoluted.dat` : `-out $base_output.dat`
 
     in_file = input ? `-in $base_output.dat` : ``
@@ -220,7 +227,7 @@ function cleanup(config, temp_folder, output_folder)
 end
 
 function run_msa(config, debug)
-    make_detector_prm_file(config)
+    
     make_msa_prm_file(config)
     msa_command = make_msa_command(config)
     println("Running MSA with command: ")
@@ -247,6 +254,7 @@ function run_drprobe(
     debug || run(celslc_command)
     
     if config["run-msa"]
+        make_detector_prm_file(config)
         run_msa(config, debug)
     else
         println("MSA deactivated, only running CELSLC")
@@ -277,6 +285,7 @@ function run_drprobe_multithreaded(
     debug || run(celslc_command)
     
     if config["run-msa"]
+        make_detector_prm_file(config)
         msa_multithread(config, debug)
         debug || stitch_lines(config)
     else
@@ -306,7 +315,7 @@ function msa_line(config, debug, line_number)
     config["scan-frame"]["resolution"]["y"] = 1
     config["scan-line"] = line_number
     config["silent"] = true #Prevents garbled output
-
+    
     run_msa(config, debug)
 end
 
@@ -334,8 +343,12 @@ function stitch_image(config, detector, slice)
     output_data = Matrix{Float32}(undef, output_size...)
     for line in 1:config["scan-frame"]["resolution"]["y"]
         line_filename = "$(config["output"])_$(line)_$(detector)_sl$(slice).dat"
-        read!(line_filename, output_data[line, :])
+        line_data = similar(output_data[:, line])
+        read!(line_filename, line_data)
+        output_data[:, line] = line_data
+        rm(line_filename)
     end
     out_filename = "$(config["output"])_$(detector)_sl$(slice).dat"
+
     write(out_filename, output_data)
 end
