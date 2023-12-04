@@ -1,6 +1,7 @@
 module DrProbeConfig
 
 using Dates
+using Comonicon
 
 export drprobe_config
 
@@ -28,7 +29,7 @@ of the configuration file to make sure it is correct and free of conflicting par
 - `-o, --output-folder=<path>`: folder in which to place the output, pwd by default
 
 """
-function drprobe_config(
+@main function drprobe_config(
     configuration_file::String;
     output_folder::String = pwd(),
     debug::Bool = false,
@@ -52,6 +53,7 @@ function drprobe_config(
             debug=debug
             )
     end
+
 end
 
 end # module DrProbeConfig

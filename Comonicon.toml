@@ -1,0 +1,14 @@
+name = "drprobe-config"
+
+[install]
+completion=true
+quiet=false
+compile="min"
+optimize=2
+
+[sysimg]
+incremental=false
+
+[application]
+incremental=false
+filter_stdlibs=false
