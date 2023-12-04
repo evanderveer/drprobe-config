@@ -1,6 +1,6 @@
 module DrProbeConfig
 
-export run_drprobe
+export run_drprobe, run_drprobe_multithreaded
 
 include("drprobefunctions.jl")
 

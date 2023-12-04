@@ -11,7 +11,7 @@ function build_celslc_command(config)
         axis = join(string.(config["projection"]["axis"]), ',')
         vertical = join(string.(config["projection"]["vertical"]), ',')
         supercell = join(string.(config["projection"]["supercell-size"]), ',')
-        prj_params = join([axis,vertical,supercell], ',')
+        prj_params = join([axis, vertical, supercell], ',')
         proj = `-prj $prj_params`
     else
         proj = ``
@@ -160,7 +160,7 @@ end
 
 function make_msa_command(config, input::Bool = false)
     prm_file = `-prm msa.prm`
-    base_output = config["output"]
+    base_output = haskey(config, "scan-line") ? "$(config["output"])_$(config["scan-line"])" : config["output"]
     out_file = input ? `-out $base_output-convoluted.dat` : `-out $base_output.dat`
 
     in_file = input ? `-in $base_output.dat` : ``
@@ -218,12 +218,22 @@ function cleanup(config, temp_folder, output_folder)
     rm(temp_folder, recursive=true)
 end
 
+function run_msa(config, debug)
+    make_detector_prm_file(config)
+    make_msa_prm_file(config)
+    msa_command = make_msa_command(config)
+    println("Running MSA with command: ")
+    println(msa_command)
+    debug || run(msa_command)
+end
+
 function run_drprobe(
     config_file; 
     debug=false, 
     output_folder=pwd(), 
     no_cleanup=false
     )
+    start_dir = pwd()
     cd(dirname(config_file))
     config = YAML.load_file(basename(config_file))
     temp_dir = mktempdir(pwd())
@@ -236,19 +246,73 @@ function run_drprobe(
     debug || run(celslc_command)
     
     if config["run-msa"]
-        make_detector_prm_file(config)
-        make_msa_prm_file(config)
-        msa_command = make_msa_command(config)
-        println("Running MSA with command: ")
-        println(msa_command)
-        debug || run(msa_command)
+        run_msa(config, debug)
     else
         println("MSA deactivated, only running CELSLC")
     end
 
-    cd("..")
+    cd(start_dir)
+
+    debug || no_cleanup || cleanup(config, joinpath(dirname(config_file), temp_dir), output_folder);
+    println(" ")
+end
+
+function run_drprobe_multithreaded(
+    config_file; 
+    debug=false, 
+    output_folder=pwd(), 
+    no_cleanup=false
+    )
+    start_dir = pwd()
+    cd(dirname(config_file))
+    config = YAML.load_file(basename(config_file))
+    temp_dir = mktempdir(pwd())
+    if isdir(temp_dir) 
+        println("TEmp exists") 
+    end
+    cp(config["input"], temp_dir*"/"*config["input"])
+    cd(temp_dir)
+
+    celslc_command = build_celslc_command(config)
+    println("Running CELSLC with command: ")
+    println(celslc_command)
+    debug || run(celslc_command)
+    
+    if config["run-msa"]
+        msa_multithread(config, debug)
+        debug || stitch_lines(config)
+    else
+        println("MSA deactivated, only running CELSLC")
+    end
+    
+    cd(start_dir)
 
     debug || no_cleanup || cleanup(config, temp_dir, output_folder);
     println(" ")
 end
 
+function msa_multithread(
+    config,
+    debug
+    )
+    Threads.@threads for line_number in 1:config["scan-frame"]["resolution"]["y"]
+        println("Calculating line $line_number")
+        msa_line(deepcopy(config), debug, line_number)
+    end
+end
+
+function msa_line(config, debug, line_number)
+
+    line_height = config["scan-frame"]["size"]["y"]/config["scan-frame"]["resolution"]["y"]
+    config["scan-frame"]["offset"]["y"] = (line_number-1)*line_height
+    config["scan-frame"]["size"]["y"] = line_height
+    config["scan-frame"]["resolution"]["y"] = 1
+    config["scan-line"] = line_number
+    config["silent"] = true #Prevents garbled output
+
+    run_msa(config, debug)
+end
+
+function stitch_lines(config)
+    return
+end
