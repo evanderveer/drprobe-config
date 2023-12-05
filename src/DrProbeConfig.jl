@@ -21,7 +21,7 @@ of the configuration file to make sure it is correct and free of conflicting par
 # Flags
 
 - `-d, --debug`: turn on debug mode, does not run any calculations
-- `-c, --no-cleanup`: skip cleaning up temporary files
+- `-n, --no-cleanup`: skip cleaning up temporary files
 - `-m, --multithreaded`: turn on multithreaded mode
 
 # Options
