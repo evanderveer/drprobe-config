@@ -201,8 +201,8 @@ scan-frame:
         y: 0.5 #nm
     rotation: 0 #deg
     resolution:
-        x: 50 #rows
-        y: 50 #columns
+        x: 5 #rows
+        y: 5 #columns
         
 #Turn on convolutions due to spatial and temporal incoherence        
 convolutions:

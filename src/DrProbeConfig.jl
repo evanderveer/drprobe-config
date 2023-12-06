@@ -7,6 +7,7 @@ export drprobe_config
 
 include("drprobefunctions.jl")
 
+#This docstring is required by Comonicon.jl
 """
 Run a multislice simulation using the configuration file supplied. Under the hood, this runs 
 the CELSLC and MSA programs by Dr. Juri Barthel. The execution is optionally multithreaded 
@@ -36,21 +37,15 @@ of the configuration file to make sure it is correct and free of conflicting par
     no_cleanup::Bool = false, 
     multithreaded::Bool = false
     )
-    if multithreaded && Threads.nthreads() > 1
-        run_drprobe_multithreaded(
-            configuration_file, 
-            output_folder=output_folder, 
-            no_cleanup=no_cleanup, 
-            debug=debug
-            )
-    elseif multithreaded
+    if multithreaded && Threads.nthreads() == 1
         throw(ArgumentError("multithreaded set to true, but nthreads == 1"))
     else
         run_drprobe(
             configuration_file, 
             output_folder=output_folder, 
             no_cleanup=no_cleanup, 
-            debug=debug
+            debug=debug,
+            multithreaded=multithreaded
             )
     end
 
