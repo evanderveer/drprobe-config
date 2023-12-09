@@ -2,6 +2,8 @@ module DrProbeConfig
 
 using Dates
 using Comonicon
+using DelimitedFiles
+using LinearAlgebra
 
 export drprobe_config
 

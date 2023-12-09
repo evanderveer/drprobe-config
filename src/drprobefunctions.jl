@@ -3,6 +3,7 @@ using YAML
 include("celslc.jl")
 include("msa.jl")
 include("image.jl")
+include("cellcalculator.jl")
 
 const FILES_TO_KEEP = r"\.dat|\.sli"
 

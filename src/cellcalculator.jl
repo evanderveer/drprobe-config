@@ -1,3 +1,17 @@
+macro index_list(max_index)
+    indices = vcat(
+                collect(
+                    Iterators.product(
+                        -max_index:max_index, 
+                        -max_index:max_index, 
+                        -max_index:max_index)
+                        )
+                    ...)
+    sort(indices, by=x->sum(x.^2))[2:end]
+end
+
+const INDEX_LIST = @index_list 50
+
 function change_basis(vector, a, b, c, α, β, γ)
     cx = c*cosd(β)
     cy = c*(cosd(α)-cosd(β)*cosd(γ))/sind(γ)
@@ -8,24 +22,43 @@ function change_basis(vector, a, b, c, α, β, γ)
          0 0         cz] * vector
 end
 
-function find_orthogonal_axis(projection_vector, cell_parameters, max_index)
-    proj_vector_ortho = change_basis(projection_vector, cell_parameters...)
-    angles = []
-    indices = []
-
-    for h in -max_index:max_index
-    for k in -max_index:max_index
-    for l in -max_index:max_index
-        if h==k==l==0; continue; end
-        vec = change_basis([h,k,l], cell_parameters...)
+function find_lower_index_zone(zone_axis, cell_parameters, tolerance)
+    proj_vector_ortho = change_basis(zone_axis, cell_parameters...)
+    for index in INDEX_LIST
+        vec = change_basis([index...], cell_parameters...)
         angle = acosd(clamp(dot(proj_vector_ortho, vec)/(norm(proj_vector_ortho)*norm(vec)), -1, 1))
-        push!(angles, angle)
-        push!(indices, (h,k,l))
+        if angle < tolerance
+            return [index...]
+        end
     end
-    end
-    end
-
-    sort_perm = sortperm(abs.(angles .- 90))
-
-    indices[sort_perm][1]
+    println("No lower index zone within tolerance")
 end
+
+function find_orthogonal_axis(zone_axis, cell_parameters, tolerance)
+    proj_vector_ortho = change_basis(zone_axis, cell_parameters...)
+
+    for index in INDEX_LIST
+        vec = change_basis([index...], cell_parameters...)
+        angle = acosd(clamp(dot(proj_vector_ortho, vec)/(norm(proj_vector_ortho)*norm(vec)), -1, 1))
+        if abs(angle .- 90) < tolerance
+            return [index...]
+        end
+    end
+    println("No lower index zone within tolerance")
+end
+
+function load_cell(
+    filename::String
+    )
+    if splitext(filename)[2] != ".cel"
+        throw(ArgumentError("filename must be a .cel file"))
+    end
+    f = open(filename)
+    readline(f) #Skip header line
+    cell_parameters = [c for c in split(readline(f), " ") if c != ""]
+    data = readdlm(f)
+    close(f)
+    return (parse.(Float64, cell_parameters[2:end]), data)
+end
+
+
