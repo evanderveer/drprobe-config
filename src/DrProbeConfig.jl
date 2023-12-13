@@ -4,6 +4,7 @@ using Dates
 using Comonicon
 using DelimitedFiles
 using LinearAlgebra
+using DataStructures
 
 export drprobe_config
 
