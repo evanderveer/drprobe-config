@@ -42,23 +42,30 @@ end
 (yield_index, reset_index) = index_generator()
 
 function find_lower_index_zone(
-    zone_axis, 
-    cell_parameters, 
-    tolerance, 
-    max_iterations
+    zone_axis::Vector{<:Real}, 
+    cell_parameters::CellParameters, 
+    tolerance::Real, 
+    max_iterations::Int
     )
-    proj_vector_ortho = change_to_orthonormal_basis(zone_axis, cell_parameters)
+    
+    zone_axis_orthonormal_basis = change_to_orthonormal_basis(zone_axis, cell_parameters)
     reset_index()
+
     for _ in 1:max_iterations
-        index = yield_index()
-        vec = change_to_orthonormal_basis([index...], cell_parameters)
-        angle = acosd(clamp(dot(proj_vector_ortho, vec) / (norm(proj_vector_ortho) * norm(vec)), -1, 1))
-        if angle < tolerance
-            return [index...]
+        trial_zone_axis = collect(yield_index())
+
+        if trial_zone_axis == zone_axis
+            return zone_axis
+        end
+
+        trial_orthonormal = change_to_orthonormal_basis(trial_zone_axis, cell_parameters)
+
+        if angle(trial_orthonormal, zone_axis_orthonormal_basis) < tolerance
+            return trial_zone_axis
         end
     end
-    println("No lower index zone within tolerance")
-    return zone_axis
+    
+    zone_axis
 end
 
 function find_orthogonal_axis(
@@ -128,17 +135,6 @@ function find_orthogonal_cell(
 end
 
 function find_vector_angles(
-    vectors, 
-    cell_parameters
-    )
-    ortho_vecs = change_to_orthonormal_basis.(vectors, cell_parameters)
-    α = acosd(dot(ortho_vecs[2], ortho_vecs[3]) / (norm(ortho_vecs[2]) * norm(ortho_vecs[3])))
-    β = acosd(dot(ortho_vecs[1], ortho_vecs[3]) / (norm(ortho_vecs[1]) * norm(ortho_vecs[3])))
-    γ = acosd(dot(ortho_vecs[1], ortho_vecs[2]) / (norm(ortho_vecs[1]) * norm(ortho_vecs[2])))
-    [α, β, γ]
-end
-
-function find_vector_angles(
     vectors::Vector{<:Vector{<:Real}}, 
     cell_parameters::CellParameters
     )
@@ -165,7 +161,7 @@ function load_cell(
     data = readdlm(f)
     close(f)
     cell_parameters = parse.(Float64, cell_parameters[2:end])
-    return (CellParameters(cell_parameters), data)
+    return (CellParameters(cell_parameters...), data)
 end
 
 
