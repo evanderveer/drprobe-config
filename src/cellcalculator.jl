@@ -48,10 +48,12 @@ function find_lower_index_zone(
     max_iterations::Int
     )
     
+    #Transform the zone axis into orthonormal basis
     zone_axis_orthonormal_basis = change_to_orthonormal_basis(zone_axis, cell_parameters)
     reset_index()
 
     for _ in 1:max_iterations
+        #Try out potential parallel vectors of increasing index
         trial_zone_axis = collect(yield_index())
 
         if trial_zone_axis == zone_axis
@@ -65,80 +67,86 @@ function find_lower_index_zone(
         end
     end
     
-    zone_axis
+    #If no lower index vector, return the input rounded to nearest integer
+    round.(Int, zone_axis)
 end
 
 function find_orthogonal_axis(
-    zone_axis, 
-    cell_parameters, 
-    tolerance, 
-    find_lower_index,
-    max_iterations
+    zone_axis::Vector{<:Real}, 
+    cell_parameters::CellParameters, 
+    tolerance::Real, 
+    max_iterations::Int
     )
-    proj_vector_ortho = change_to_orthonormal_basis(zone_axis, cell_parameters)
+
+    #Transform the zone axis into orthonormal basis
+    zone_axis_orthonormal = change_to_orthonormal_basis(zone_axis, cell_parameters)
     reset_index()
+
     for _ in 1:max_iterations
-        index = yield_index()
-        vec = change_to_orthonormal_basis([index...], cell_parameters)
-        angle = acosd(clamp(dot(proj_vector_ortho, vec) / (norm(proj_vector_ortho) * norm(vec)), -1, 1))
-        if abs(angle .- 90) < tolerance
-            return [index...]
+        #Try out potential orthogonal vectors of increasing index
+        trial_zone_axis = collect(yield_index())
+        trial_orthonormal = change_to_orthonormal_basis(trial_zone_axis, cell_parameters)
+        if abs(angle(zone_axis_orthonormal, trial_orthonormal) .- 90) < tolerance
+            return trial_zone_axis
         end
     end
-    println("No lower index zone within tolerance")
+
 end
 
-function find_third_vector(
-    vector_1,
-    vector_2, 
-    cell_parameters, 
-    tolerance, 
-    find_lower_index, 
-    max_iterations
+function find_orthogonal_axis(
+    vector_1::Vector{<:Real}, 
+    vector_2::Vector{<:Real}, 
+    cell_parameters::CellParameters, 
     )
+    vector_1_orthogonal = change_to_orthonormal_basis(vector_1, cell_parameters)
+    vector_2_orthogonal = change_to_orthonormal_basis(vector_2, cell_parameters)
 
-    vec_1_ortho = change_to_orthonormal_basis(vector_1, cell_parameters)
-    vec_2_ortho = change_to_orthonormal_basis(vector_2, cell_parameters)
-
-    third_vector = change_from_orthonormal_basis(cross(vec_1_ortho, vec_2_ortho), cell_parameters)
-    if sqrt(sum(third_vector .^ 2)) > 30
-        println("High index lattice vector, trying to find lower index vector")
-    end
-    third_vector = round.(Int32, find_lower_index_zone(third_vector, cell_parameters, tolerance, max_iterations))
-    println("New lattice vector: $third_vector")
-    third_vector
+    change_from_orthonormal_basis(vector_1_orthogonal × vector_2_orthogonal, cell_parameters)
 end
 
 function find_orthogonal_cell(
     zone_axis::Vector{<:Int},
     cell_parameters::CellParameters; 
     tolerance::Real = 1, 
-    find_lower_index::Bool = true, 
-    max_iterations::Int = 1E7
+    max_iterations::Int = 10_000_000
     )
-    if find_lower_index && sqrt(sum(zone_axis .^ 2)) > 30
-        println("High index zone axis, trying to find lower index zone")
-        zone_axis = find_lower_index_zone(zone_axis, cell_parameters, tolerance, max_iterations)
-        println("New zone axis: $zone_axis")
+
+    orthogonal_vector = find_orthogonal_axis(
+        zone_axis, 
+        cell_parameters, 
+        tolerance, 
+        max_iterations)
+
+    if isnothing(orthogonal_vector)
+        error("Could not find orthogonal axis. Increase tolerance or maximum number of iterations.")
     end
 
-    orthogonal_vector = find_orthogonal_axis(zone_axis, cell_parameters, tolerance, find_lower_index, max_iterations)
-    third_vector = find_third_vector(zone_axis, orthogonal_vector, cell_parameters, tolerance, find_lower_index, max_iterations)
+    third_vector = find_orthogonal_axis(
+        zone_axis, 
+        orthogonal_vector, 
+        cell_parameters)
 
-    println("\nNew orthogonal cell found. a = $(Tuple(orthogonal_vector)), b = $(Tuple(third_vector)), c (ZA) = $(Tuple(zone_axis))")
+    zone_axis = find_lower_index_zone(zone_axis, cell_parameters, tolerance, max_iterations)
+    third_vector = find_lower_index_zone(third_vector, cell_parameters, tolerance, max_iterations)
 
-    angles = round.(90 .- find_vector_angles([orthogonal_vector, third_vector, zone_axis], cell_parameters), digits=4)
-    println("Orthogonal cell angle error: α = $(angles[1])°, β = $(angles[2])°, γ = $(angles[3])°")
+    print_results(orthogonal_vector, third_vector, zone_axis, cell_parameters)
 
     #Return the change of basis matrix
     [orthogonal_vector third_vector zone_axis]
+end
+
+function print_results(a, b, c, cell_parameters)
+    println("\nNew orthogonal cell found. a = $(Tuple(a)), b = $(Tuple(b)), c (ZA) = $(Tuple(c))")
+
+    angles = round.(90 .- find_vector_angles([a, b, c], cell_parameters), digits=4)
+    println("Orthogonal cell angle deviation from 90°: α = $(angles[1])°, β = $(angles[2])°, γ = $(angles[3])°")
 end
 
 function find_vector_angles(
     vectors::Vector{<:Vector{<:Real}}, 
     cell_parameters::CellParameters
     )
-    orthonormal_vectors = change_to_orthonormal_basis.(vectors, cell_parameters)
+    orthonormal_vectors = change_to_orthonormal_basis.(vectors, Ref(cell_parameters))
 
     α = angle(orthonormal_vectors[2], orthonormal_vectors[3])
     β = angle(orthonormal_vectors[1], orthonormal_vectors[3])
@@ -163,7 +171,3 @@ function load_cell(
     cell_parameters = parse.(Float64, cell_parameters[2:end])
     return (CellParameters(cell_parameters...), data)
 end
-
-
-
-abs2
