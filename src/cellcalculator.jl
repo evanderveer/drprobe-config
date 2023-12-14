@@ -24,21 +24,19 @@ end
 """
     orthonormal_basis_matrix(cell_parameters::CellParameters)
     Compute the change of basis matrix to an orthonormal basis for the given cell parameters.
-
+    Taken from *Essentials of Crystallography, Vol. 1* by McKie & McKie, p. 156. 
     Returns a 3x3 matrix representing the orthonormal basis.
 """
 function orthonormal_basis_matrix(
     cell_parameters::CellParameters
 )
     (; a, b, c, α, β, γ) = cell_parameters
-    cx = c*cosd(β)
-    cy = c*(cosd(α)-cosd(β)*cosd(γ))/sind(γ)
-    cz = sqrt(c^2 - cx^2 - cy^2)
-    
+    γstar = acosd( ( cosd(α)*cosd(β) - cosd(γ) )/( sind(α)*sind(β) ) )
+
     #Return the CoB matrix
-    [a b*cosd(γ) cx; 
-     0 b*sind(γ) cy; 
-     0 0         cz]
+    [ a*sind(β)*sind(γstar) 0         0; 
+     -a*sind(β)*cosd(γstar) b*sind(α) 0; 
+      a*cosd(β)             b*cosd(α) c]
 end
 
 """
@@ -256,11 +254,81 @@ function angle(
     magnitude_product = norm(a) * norm(b)
     
     if magnitude_product ≈ 0.0
-        throw(ArgumentError("Cannot calculate angle with zero-length vector"))
+        throw(ArgumentError("Cannot calculate angle with zero-length vector: a = $a, b = $b"))
     end
 
     dot_clamped = clamp(dot_product / magnitude_product, -1, 1)
     return acosd(dot_clamped)
+end
+
+"""
+    transform_atom_positions(
+        atom_positions::AbstractMatrix{<:Real}, 
+        cell_parameters::CellParameters)
+    Transform the atomic positions in the unit cell defined by `cell_parameters` to
+    equivalent positions in the new unit cell given a change of basis matrix between
+    the two. 
+    Taken from *Essentials of Crystallography, Vol. 1* by McKie & McKie, p. 164. 
+"""
+function transform_atom_positions(
+    positions::AbstractVecOrMat{<:Real}, 
+    CoBmatrix::AbstractMatrix{<:Real}
+    )
+    #Return transformed positions
+    hcat([transpose(inv(CoBmatrix)) * col for col in eachcol(positions)]...)
+end
+
+function extend_atom_positions(
+    position_basis::AbstractVecOrMat{<:Real},
+    CoBmatrix::AbstractMatrix{<:Real}
+    )
+    for (axis, range) in zip(([1,0,0], [0,1,0], [0,0,1]), 
+                            expansion_ranges(CoBmatrix))
+        position_basis = expand_along_axis(position_basis, range, axis)
+    end
+    position_basis
+end
+
+function expand_along_axis(
+    position_basis::AbstractVecOrMat{<:Real},
+    range::UnitRange,
+    axis::AbstractVector{<:Int}
+    )
+    new_basis = deepcopy(position_basis)
+    for translation_magnitude in range
+        translation_vector = translation_magnitude * axis
+        new_basis = [new_basis position_basis .+ translation_vector]
+    end
+    new_basis
+end
+
+#In case you want to pass a single atom basis as a vector
+function expand_along_axis(
+    position_basis::AbstractVector{T},
+    range::UnitRange,
+    axis::AbstractVector{<:Int}
+    ) where T<:Real
+    position_basis_matrix = Matrix{T}(undef, length(position_basis), 1)
+    position_basis_matrix .= position_basis
+    new_basis = deepcopy(position_basis_matrix)
+    for translation_magnitude in range
+        translation_vector = translation_magnitude * axis
+        new_basis = [new_basis position_basis_matrix .+ translation_vector]
+    end
+    new_basis
+end
+
+function expansion_ranges(
+    CoBmatrix::AbstractMatrix{<:Real}
+    )
+    ranges = Vector{UnitRange}()
+
+    for col in eachcol(CoBmatrix)
+        min_to_fill = minimum([col..., 0])
+        max_to_fill = maximum([col..., sum(col)])
+        push!(ranges, min_to_fill-1:max_to_fill+1)
+    end
+    ranges
 end
 
 """

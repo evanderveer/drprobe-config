@@ -18,7 +18,7 @@ function index_generator()
                         )
                     ...)
         
-        sorted_indices = sort(indices, by=x->sum(x.^2))
+        sorted_indices = sort(indices, by=x->sum(x.^2))[2:end]
         enqueue!.(Ref(index_queue), sorted_indices)
     end
     function reset()
