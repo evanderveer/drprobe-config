@@ -217,6 +217,8 @@ function print_results(a, b, c, cell_parameters)
 
     angles = round.(90 .- find_vector_angles([a, b, c], cell_parameters), digits=4)
     println("Orthogonal cell angle deviation from 90°: α = $(angles[1])°, β = $(angles[2])°, γ = $(angles[3])°")
+
+    println("The new orthogonal unit cell is $(det([a b c])) times larger than the old unit cell.")
 end
 
 """
@@ -276,6 +278,15 @@ function transform_atom_positions(
     )
     #Return transformed positions
     hcat([transpose(inv(CoBmatrix)) * col for col in eachcol(positions)]...)
+end
+
+function transform_basis(
+    position_basis::AbstractVecOrMat{<:Real},
+    CoBmatrix::AbstractMatrix{<:Real}
+)
+    extended_positions = extend_atom_positions(position_basis, CoBmatrix)
+    transformed_positions = transform_atom_positions(extended_positions, CoBmatrix)
+    filter_positions(transformed_positions)
 end
 
 function extend_atom_positions(
