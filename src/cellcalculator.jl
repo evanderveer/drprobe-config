@@ -326,9 +326,25 @@ function expansion_ranges(
     for col in eachcol(CoBmatrix)
         min_to_fill = minimum([col..., 0])
         max_to_fill = maximum([col..., sum(col)])
-        push!(ranges, min_to_fill-1:max_to_fill+1)
+        push!(ranges, min_to_fill:max_to_fill)
     end
     ranges
+end
+
+function filter_positions(
+    positions::AbstractVecOrMat{<:Real}
+    )
+    round.(positions, digits=5)
+
+    positions_inside_unit_cell = positions[:, [all(0 .<= position .< 1) 
+                                               for position in eachcol(positions)]]
+    positions_without_duplicates = []
+    for position in eachcol(positions_inside_unit_cell)
+        if !(position ∈ positions_without_duplicates)
+            push!(positions_without_duplicates, position)
+        end
+    end
+    hcat(positions_without_duplicates...)
 end
 
 """
