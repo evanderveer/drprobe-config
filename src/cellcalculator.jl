@@ -1,5 +1,11 @@
 include("index_generator.jl")
 
+const ELEMENTS = begin
+    lowercase.(readdlm("src/element_list.txt"))
+end
+
+const CELL_ID_STRING = "# Orthogonalized unit cell\n"
+
 """
     struct CellParameters
     Represents the parameters of a crystallographic cell.
@@ -273,15 +279,22 @@ end
     Taken from *Essentials of Crystallography, Vol. 1* by McKie & McKie, p. 164. 
 """
 function transform_atom_positions(
-    positions::AbstractVecOrMat{<:Real}, 
+    position_basis::AbstractVecOrMat, 
     CoBmatrix::AbstractMatrix{<:Real}
     )
-    #Return transformed positions
-    hcat([transpose(inv(CoBmatrix)) * col for col in eachcol(positions)]...)
+    transformation_matrix = inv(transpose(CoBmatrix))
+    positions = position_basis[2:4, :]
+
+    transformed_positions = hcat([transformation_matrix * col for col in eachcol(positions)]...)
+    [
+        permutedims(position_basis[1,:]); 
+        transformed_positions; 
+        position_basis[5:end, :]
+    ]
 end
 
 function transform_basis(
-    position_basis::AbstractVecOrMat{<:Real},
+    position_basis::AbstractVecOrMat,
     CoBmatrix::AbstractMatrix{<:Real}
 )
     extended_positions = extend_atom_positions(position_basis, CoBmatrix)
@@ -290,7 +303,7 @@ function transform_basis(
 end
 
 function extend_atom_positions(
-    position_basis::AbstractVecOrMat{<:Real},
+    position_basis::AbstractVecOrMat,
     CoBmatrix::AbstractMatrix{<:Real}
     )
     for (axis, range) in zip(([1,0,0], [0,1,0], [0,0,1]), 
@@ -301,30 +314,17 @@ function extend_atom_positions(
 end
 
 function expand_along_axis(
-    position_basis::AbstractVecOrMat{<:Real},
+    position_basis::AbstractVecOrMat,
     range::UnitRange,
     axis::AbstractVector{<:Int}
     )
     new_basis = deepcopy(position_basis)
     for translation_magnitude in range
         translation_vector = translation_magnitude * axis
-        new_basis = [new_basis position_basis .+ translation_vector]
-    end
-    new_basis
-end
-
-#In case you want to pass a single atom basis as a vector
-function expand_along_axis(
-    position_basis::AbstractVector{T},
-    range::UnitRange,
-    axis::AbstractVector{<:Int}
-    ) where T<:Real
-    position_basis_matrix = Matrix{T}(undef, length(position_basis), 1)
-    position_basis_matrix .= position_basis
-    new_basis = deepcopy(position_basis_matrix)
-    for translation_magnitude in range
-        translation_vector = translation_magnitude * axis
-        new_basis = [new_basis position_basis_matrix .+ translation_vector]
+        added_positions = [permutedims(position_basis[1, :]); 
+                           position_basis[2:4, :] .+ translation_vector; 
+                           position_basis[5:end,:]]
+        new_basis = [new_basis added_positions]
     end
     new_basis
 end
@@ -343,11 +343,11 @@ function expansion_ranges(
 end
 
 function filter_positions(
-    positions::AbstractVecOrMat{<:Real}
+    positions::AbstractVecOrMat
     )
-    round.(positions, digits=5)
+    positions[2:4, :] .= round.(positions[2:4, :], digits=5)
 
-    positions_inside_unit_cell = positions[:, [all(0 .<= position .< 1) 
+    positions_inside_unit_cell = positions[:, [all(0 .<= position[2:4] .< 1) 
                                                for position in eachcol(positions)]]
     positions_without_duplicates = []
     for position in eachcol(positions_inside_unit_cell)
@@ -358,6 +358,14 @@ function filter_positions(
     hcat(positions_without_duplicates...)
 end
 
+function new_cell_parameters(
+    cell_parameters::CellParameters,
+    CoBmatrix::AbstractMatrix{<:Real}
+)
+    lattice_parameters = sqrt.([cell_parameters.a cell_parameters.b cell_parameters.c] .^ 2 * CoBmatrix .^2)'
+    #Now pretend that all angles are 90°
+    CellParameters(lattice_parameters..., 90, 90, 90)
+end
 """
     load_cell(filename::String)
     Load cell parameters and atom positions in the unit cell from a .cel file.
@@ -376,5 +384,37 @@ function load_cell(
     data = readdlm(f)
     close(f)
     cell_parameters = parse.(Float64, cell_parameters[2:end])
+    data = data_to_matrix(data)
     return (CellParameters(cell_parameters...), data)
+end
+
+function data_to_matrix(data)
+    out_data = []
+    for row in eachrow(data)
+        if !(lowercase(row[1]) ∈ ELEMENTS)
+            continue
+        end
+        push!(out_data, row)
+    end
+    hcat(out_data...)
+end
+
+function save_cell(
+    filename::String,
+    cell_parameters::CellParameters,
+    data::AbstractMatrix
+)
+    f = open(filename, "w")
+    write(f, CELL_ID_STRING)
+    writedlm(f,
+             permutedims([0, 
+                          cell_parameters.a, 
+                          cell_parameters.b, 
+                          cell_parameters.c, 
+                          cell_parameters.α, 
+                          cell_parameters.β, 
+                          cell_parameters.γ]),
+             ' ')
+    writedlm(f, permutedims(data))
+    close(f)
 end
