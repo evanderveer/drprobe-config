@@ -1,8 +1,5 @@
 include("index_generator.jl")
-
-const ELEMENTS = begin
-    lowercase.(readdlm("src/element_list.txt"))
-end
+include("elements.jl")
 
 const CELL_ID_STRING = "# Orthogonalized unit cell\n"
 
