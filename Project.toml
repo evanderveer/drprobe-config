@@ -1,7 +1,7 @@
 name = "DrProbeConfig"
 uuid = "0a6cd471-1257-429e-b8c0-364a01e6572b"
-authors = ["p300058 "]
-version = "0.1.0"
+authors = ["Ewout van der Veer"]
+version = "0.2.0"
 
 [deps]
 Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
