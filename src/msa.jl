@@ -146,7 +146,7 @@ function number_of_slice_files(
     base_name::String
     )
     all_files = readdir()
-    slice_file_pattern = Regex(join(["^", base_name, raw"_\d\d\d.sli$"], ""))
+    slice_file_pattern = Regex(join([".*", base_name, raw"_[0-9]+.sli$"]))
     sum(occursin.(slice_file_pattern, all_files))
 end
 

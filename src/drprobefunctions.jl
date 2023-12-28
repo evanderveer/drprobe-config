@@ -4,9 +4,10 @@ include("celslc.jl")
 include("msa.jl")
 include("image.jl")
 include("cellcalculator.jl")
+include("imageconstructor.jl")
 
 
-const FILES_TO_KEEP = r"\.dat|\.sli"
+const FILES_TO_KEEP = r"\.dat|\.sli|\.tif"
 
 """
     run_drprobe(
@@ -32,7 +33,9 @@ run_drprobe("config.yml", output_folder="/path/to/output", debug=true)
 """
 function run_drprobe(
     config_file::String; 
-    output_folder::String = pwd(), 
+    output_folder::String = pwd(),
+    temporary_folder::String = pwd(), 
+    slice_file_folder::String = pwd(),
     no_cleanup::Bool = false,
     debug::Bool = false,
     multithreaded::Bool = false
@@ -41,13 +44,23 @@ function run_drprobe(
     start_dir = pwd()
     cd(dirname(config_file))
     config = YAML.load_file(basename(config_file))
-    temp_dir = mktempdir(pwd())
+
+    #Make paths absolute to prevent problems later
+    temp_dir = abspath(mktempdir(temporary_folder))
+    slice_file_dir = abspath(slice_file_folder)
+    output_dir = abspath(output_folder)
 
     #Copy the input file (.cif/.cel) to the temporary folder
     cp(config["input"], joinpath(temp_dir, basename(config["input"])))
-    cd(temp_dir)
 
-    run_celslc(config, debug)
+    if config["run-celslc"]
+        cd(temp_dir)
+        run_celslc(config, debug)
+    else
+        println("CELSLC disabled, looking for slice files")
+        link_slice_files(config, temp_dir, slice_file_dir)
+        cd(temp_dir)
+    end
 
     msa_function = multithreaded ? run_msa_multithread : run_msa
     
@@ -58,10 +71,12 @@ function run_drprobe(
         println("MSA deactivated, only running CELSLC")
     end
 
+    make_images(config)
+
     cd(start_dir)
     
     if !(debug || no_cleanup)
-        cleanup(config, joinpath(dirname(config_file), temp_dir), output_folder)
+        cleanup(config, temp_dir, output_dir)
     end
 end
 
@@ -89,7 +104,8 @@ function cleanup(
     output_folder::String
     )
     println("Cleaning up the mess")
-    output_folder = mkdir(string(now()))
+    output_folder = mkdir(joinpath(output_folder, string(now())))
+    println("Output folder: $output_folder")
 
     files_to_move = filter!(
                                 x -> occursin(FILES_TO_KEEP, x), 
@@ -104,3 +120,25 @@ function cleanup(
     end
     rm(temp_folder, recursive=true)
 end
+
+function link_slice_files(
+    config::Dict,
+    temp_dir::String,
+    slice_file_dir::String
+)
+    sli_file_regex = Regex(join([".*", config["output"], raw"_[0-9]+.sli$"]))
+    full_file_list = readdir(slice_file_dir, join=true)
+    sli_files = full_file_list[occursin.(sli_file_regex, full_file_list)]
+
+    if length(sli_files) == 0
+        error("No slice files found in $slice_file_dir. Make sure slice file name matches config file")
+    end
+    
+    println("Found $(length(sli_files)) slice files, making symbolic links")
+
+    #Slice files can get big so symlink instead of copy
+    for sli_file in sli_files
+        symlink(sli_file, joinpath(pwd(), temp_dir, basename(sli_file)))
+    end
+end
+

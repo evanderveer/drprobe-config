@@ -8,14 +8,17 @@
 #--------------------------------#
 
 #Input as a .cif or .cel file
-input: BTO_Pm-3m.cif
+input: "BTO_Pm-3m.cif"
 
 #Output file base name (i.e. base --> base_001.sli, base.dat)
-output: test
+output: "test"
 
 #--------------------------------#
 # CELSLC
 #--------------------------------#
+
+#Disable CELSLC if slice files have already been calculated
+run-celslc: true
 
 #Export projected potentials either as .pot or .sli files
 export-potentials:

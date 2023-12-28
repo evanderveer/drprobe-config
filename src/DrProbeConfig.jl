@@ -5,6 +5,7 @@ using Comonicon
 using DelimitedFiles
 using LinearAlgebra
 using DataStructures
+using Images
 
 export drprobe_config
 
@@ -31,11 +32,14 @@ of the configuration file to make sure it is correct and free of conflicting par
 # Options
 
 - `-o, --output-folder=<path>`: folder in which to place the output, pwd by default
-
+- `-t, --temporary-folder=<path>`: folder in which to place temporary files, pwd by default
+- `-s, --slice-file-folder=<path>`: folder containing slice files, only when CELSLC is disabled
 """
 @main function drprobe_config(
     configuration_file::String;
     output_folder::String = pwd(),
+    temporary_folder::String = pwd(),
+    slice_file_folder::String = pwd(),
     debug::Bool = false,
     no_cleanup::Bool = false, 
     multithreaded::Bool = false
@@ -46,6 +50,8 @@ of the configuration file to make sure it is correct and free of conflicting par
         run_drprobe(
             configuration_file, 
             output_folder=output_folder, 
+            temporary_folder=temporary_folder,
+	        slice_file_folder=slice_file_folder,
             no_cleanup=no_cleanup, 
             debug=debug,
             multithreaded=multithreaded
