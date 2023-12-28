@@ -199,27 +199,30 @@ function find_orthogonal_cell(
         tolerance, 
         maximum_iterations)
 
+    
     if isnothing(orthogonal_vector)
         error("Could not find orthogonal axis. Increase tolerance or maximum number of iterations.")
-    elseif maximum(orthogonal_vector) > maximum_index
-        throw(CellException("orthogonal axis index exceeds maximum, increase tolerance"))
+    elseif maximum(abs.(orthogonal_vector)) > maximum_index
+        error("orthogonal axis index exceeds maximum, increase tolerance")
     end
 
     third_vector = find_orthogonal_axis(
         zone_axis, 
         orthogonal_vector, 
         cell_parameters)
-
-    if maximum(third_vector) > maximum_index
-        throw(CellException("orthogonal axis index exceeds maximum, increase tolerance"))
+    third_vector = find_lower_index_zone(
+        third_vector, 
+        cell_parameters,
+        tolerance, 
+        maximum_iterations)
+    
+    if maximum(abs.(third_vector)) > maximum_index
+        error("second orthogonal axis index exceeds maximum, increase tolerance")
     end
 
     zone_axis = find_lower_index_zone(zone_axis, cell_parameters, tolerance, maximum_iterations)
-    third_vector = find_lower_index_zone(third_vector, cell_parameters, tolerance, maximum_iterations)
-
+    
     print_results(orthogonal_vector, third_vector, zone_axis, cell_parameters)
-
-
 
     #Return the change of basis matrix
     transpose([orthogonal_vector third_vector zone_axis])
@@ -347,6 +350,30 @@ function expansion_ranges(
     )
     ranges = Vector{UnitRange}()
 
+    if isdiagonal(CoBmatrix)
+        fill_ranges_orthogonal(ranges, CoBmatrix)
+    else
+        fill_ranges_nonorthogonal(ranges, CoBmatrix)
+    end
+
+    ranges
+end
+
+function fill_ranges_orthogonal(
+    ranges::Vector{UnitRange},
+    CoBmatrix::AbstractMatrix{<:Real}
+    )
+    for axis in diag(CoBmatrix)
+        min_to_fill = floor(Int64, minimum([axis, 0]))
+        max_to_fill = ceil(Int64, maximum([axis, 0]))
+        push!(ranges, min_to_fill:max_to_fill)
+    end
+end
+
+function fill_ranges_nonorthogonal(
+    ranges::Vector{UnitRange},
+    CoBmatrix::AbstractMatrix{<:Real}
+    )
     for col in eachcol(CoBmatrix)
         min_to_fill = floor(Int64, minimum([col..., sum(col), 0]))
         max_to_fill = ceil(Int64, maximum([col..., sum(col)]))
@@ -354,7 +381,6 @@ function expansion_ranges(
         #Adding a few extra uc's seems to be necessary for some reason
         push!(ranges, min_to_fill-5:max_to_fill+5)
     end
-    ranges
 end
 
 function filter_positions(
@@ -448,9 +474,11 @@ function make_block(
                 block_size[1]/a 0 0;
                 0 block_size[2]/b 0;
                 0 0 block_size[3]/c
-                ]
+                ] 
     new_cps = new_cell_parameters(cell_parameters, CoBmatrix)
     println(new_cps)
     new_basis = DrProbeConfig.transform_basis(basis, CoBmatrix)
     (new_cps, new_basis)
 end
+
+isdiagonal(matrix::AbstractMatrix) = diagm(diag(matrix)) == matrix
