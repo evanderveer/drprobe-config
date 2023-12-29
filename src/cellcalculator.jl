@@ -465,7 +465,7 @@ function make_block(
     cell_parameters::CellParameters,
     basis,
     block_size
-)
+    )
     (; a, b, c, α, β, γ) = cell_parameters
     CoBmatrix = [
                 block_size[1]/a 0 0;

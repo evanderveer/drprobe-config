@@ -1,20 +1,70 @@
 """
+    run_msa(config::Dict)
+
+    Run the Multislice Algorithm (MSA) with the provided configuration.
+
+    # Arguments
+    - `config::Dict`: Dictionary containing configuration parameters.
+
+    # Example
+    ```julia
+    run_msa(config, true)
+"""
+function msa(config::Dict)
+
+    if Threads.nthreads() == 1 || "test-multithreading" ∈ config["debug"]
+        run_msa_singlethreaded(config)
+    else
+        run_msa_multithreaded(config)
+    end
+end
+
+function run_msa_singlethreaded(config::Dict)
+
+    make_msa_prm_file(config)
+    msa_command = make_msa_command(config)
+    println("Running MSA with command: ")
+    println(msa_command)
+    "print-commands" ∈ config["debug"] || run(msa_command)
+end
+
+"""
+    run_msa_multithreaded(config::Dict)
+
+    Run the Multislice Algorithm (MSA) using multiple threads, iterating over scan lines.
+
+    # Arguments
+    - `config::Dict`: Dictionary containing configuration parameters.
+
+    # Example
+    ```julia
+    run_msa_multithread(config, true)
+"""
+function run_msa_multithreaded(config::Dict)
+
+    if "test-multithreading" ∈ config["debug"] 
+        msa_iterate_lines_debug(config)
+    else
+        msa_iterate_lines(config)
+    end
+    "print-commands" ∈ config["debug"] || stitch_lines(config)
+end
+
+"""
     make_msa_prm_file(
         config::Dict
         )
 
-Generate the parameter file for the Multislice Algorithm (MSA) based on the given configuration.
+    Generate the parameter file for the Multislice Algorithm (MSA) based on the given configuration.
 
-# Arguments
-- `config::Dict`: Dictionary containing configuration parameters.
+    # Arguments
+    - `config::Dict`: Dictionary containing configuration parameters.
 
-# Example
-```julia
-make_msa_prm_file(config)
+    # Example
+    ```julia
+    make_msa_prm_file(config)
 """
-function make_msa_prm_file(
-    config::Dict
-    )
+function make_msa_prm_file(config::Dict)
 
     f = haskey(config, "scan-line") ? open("msa$(config["scan-line"]).prm", "w") : open("msa.prm", "w")
     write(f, "'[Microscope Parameters]'\n")
@@ -104,16 +154,16 @@ end
         num_sli_files::Int
         )
 
-Calculate the readout period based on the provided dictionary of readout settings from 
-the configuration file and the number of slice files.
+    Calculate the readout period based on the provided dictionary of readout settings from 
+    the configuration file and the number of slice files.
 
-# Arguments
-- `period_dict::Dict`: Dictionary containing readout period parameters.
-- `num_sli_files::Int`: Number of slice files.
+    # Arguments
+    - `period_dict::Dict`: Dictionary containing readout period parameters.
+    - `num_sli_files::Int`: Number of slice files.
 
-# Example
-```julia
-readout_period(period_dict, num_sli_files)
+    # Example
+    ```julia
+    readout_period(period_dict, num_sli_files)
 """
 function readout_period(
     period_dict::Dict, 
@@ -129,18 +179,16 @@ function readout_period(
 end
 
 """
-    number_of_slice_files(
-        base_name::String
-        )
+    number_of_slice_files(base_name::String)
 
-Count the number of slice files present.
+    Count the number of slice files present.
 
-# Arguments
-- `base_name::String`: Base name used to form the slice file pattern.
+    # Arguments
+    - `base_name::String`: Base name used to form the slice file pattern.
 
-# Example
-```julia
-number_of_slice_files("output")
+    # Example
+    ```julia
+    number_of_slice_files("output")
 """
 function number_of_slice_files(
     base_name::String
@@ -156,15 +204,15 @@ end
         input::Bool = false
         )
 
-Generate the MSA command based on the given configuration.
+    Generate the MSA command based on the given configuration.
 
-# Arguments
-- `config::Dict`: Dictionary containing configuration parameters.
-- `input::Bool`: Flag indicating whether the MSA is for input data (default is false).
+    # Arguments
+    - `config::Dict`: Dictionary containing configuration parameters.
+    - `input::Bool`: Flag indicating whether the MSA is for input data (default is false).
 
-# Example
-```julia
-make_msa_command(config, true)
+    # Example
+    ```julia
+    make_msa_command(config, true)
 """
 function make_msa_command(
     config::Dict, 
@@ -200,7 +248,7 @@ function make_msa_command(
     lapro = config["use-large-angle-propagators"] ? `/lapro` : ``
     dftest = config["use-FFTW-ESTIMATE"] ? `/dftest` : ``
     verbose = config["verbose"] ? `/verbose` : ``
-    debug = config["debug"] ? `/debug` : ``
+    debug = config["msa-debug"] ? `/debug` : ``
     silent = config["silent"] ? `/silent` : ``
 
     `msa $prm_file $out_file $in_file $beam_tilt $ctem $text_output $three_d_output $wave $detimg $lapro $dftest $verbose $debug $silent`
@@ -209,14 +257,14 @@ end
 """
     make_detector_prm_file(config::Dict)
 
-Generate the parameter file for the detector settings based on the given configuration.
+    Generate the parameter file for the detector settings based on the given configuration.
 
-# Arguments
-- `config::Dict`: Dictionary containing configuration parameters.
+    # Arguments
+    - `config::Dict`: Dictionary containing configuration parameters.
 
-# Example
-```julia
-make_detector_prm_file(config)
+    # Example
+    ```julia
+    make_detector_prm_file(config)
 """
 function make_detector_prm_file(
     config::Dict
@@ -240,34 +288,8 @@ function make_detector_prm_file(
     close(f)
 end
 
-"""
-    run_msa(config::Dict, debug::Bool)
+function msa_spatial_convolution(config::Dict)
 
-Run the Multislice Algorithm (MSA) with the provided configuration.
-
-# Arguments
-- `config::Dict`: Dictionary containing configuration parameters.
-- `debug::Bool`: Flag indicating whether to enable debugging output.
-
-# Example
-```julia
-run_msa(config, true)
-"""
-function run_msa(
-    config::Dict, 
-    debug::Bool
-    )
-    make_msa_prm_file(config)
-    msa_command = make_msa_command(config)
-    println("Running MSA with command: ")
-    println(msa_command)
-    debug || run(msa_command)
-end
-
-function msa_spatial_convolution(
-    config::Dict, 
-    debug::Bool
-    )
     if !config["convolutions"]["source-size"]["activate"]
         return
     end
@@ -275,60 +297,36 @@ function msa_spatial_convolution(
     msa_command = make_msa_command(config, true)
     println("Applying source size convolution ")
     println(msa_command)
-    debug || run(msa_command)
+    "print-commands" ∈ config["debug"] || run(msa_command)
 end
 
-"""
-    run_msa_multithread(config::Dict, debug::Bool)
-
-Run the Multislice Algorithm (MSA) using multiple threads, iterating over scan lines.
-
-# Arguments
-- `config::Dict`: Dictionary containing configuration parameters.
-- `debug::Bool`: Flag indicating whether to enable debugging output.
-
-# Example
-```julia
-run_msa_multithread(config, true)
-"""
-function run_msa_multithread(
-    config::Dict,
-    debug::Bool
-    )
-    msa_function = debug ? iterate_lines_debug : iterate_lines
-    msa_function(config, false)
-    stitch_lines(config)
-end
-
-function msa_iterate_lines(config, debug)
+function msa_iterate_lines(config)
     Threads.@threads for line_number in 1:config["scan-frame"]["resolution"]["y"]
-        msa_line(deepcopy(config), debug, line_number)
+        msa_line(deepcopy(config), line_number)
     end
 end
 
-function msa_iterate_lines_debug(config, debug)
+function msa_iterate_lines_debug(config)
     for line_number in 1:config["scan-frame"]["resolution"]["y"]
-        msa_line(deepcopy(config), debug, line_number)
+        msa_line(deepcopy(config), line_number)
     end
 end
 
 """
-    msa_line(config::Dict, debug::Bool, line_number::Int)
+    msa_line(config::Dict, line_number::Int)
 
-Run the Multislice Algorithm (MSA) for a specific scan line.
+    Run the Multislice Algorithm (MSA) for a specific scan line.
 
-# Arguments
-- `config::Dict`: Dictionary containing configuration parameters.
-- `debug::Bool`: Flag indicating whether to enable debugging output.
-- `line_number::Int`: Line number for the scan.
+    # Arguments
+    - `config::Dict`: Dictionary containing configuration parameters.
+    - `line_number::Int`: Line number for the scan.
 
-# Example
-```julia
-msa_line(config, true, 1)
+    # Example
+    ```julia
+    msa_line(config, true, 1)
 """
 function msa_line(
     config::Dict, 
-    debug::Bool, 
     line_number::Int
     )
 
@@ -339,5 +337,5 @@ function msa_line(
     config["scan-line"] = line_number
     config["silent"] = true #Prevents garbled output
     
-    run_msa(config, debug)
+    run_msa_singlethreaded(config)
 end

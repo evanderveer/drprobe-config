@@ -22,9 +22,7 @@ Generate a regular expression pattern for matching data file names.
 # Returns
 A regular expression pattern for matching data file names.
 """
-function data_file_name_pattern(
-    base_name::String
-    )
+function data_file_name_pattern(base_name::String)
     Regex(base_name * raw"_([0-9])_(.+)_sl([0-9]+).dat")
 end
 

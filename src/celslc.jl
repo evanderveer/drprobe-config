@@ -1,7 +1,26 @@
 """
-build_celslc_command(
-    config::Dict
-    )
+function run_celslc(config::Dict)
+
+Build A CELSLC command from the configuration supplied, then run CELSLC.
+
+# Arguments
+- `config::Dict`: A dictionary containing configuration parameters.
+
+# Returns
+- Nothing, but writes phase gratings/projected potentials to disk.
+"""
+function celslc(config::Dict)
+
+    celslc_command = build_celslc_command(config)
+    println("Running CELSLC with command: ")
+    println(celslc_command)
+
+    #Do not run the command when in the 'print-commands' debug mode
+    "print-commands" ∈ config["debug"] || run(celslc_command)
+end
+
+"""
+build_celslc_command(config::Dict)
 
 Build the CELSLC command from the configuration supplied.
 
@@ -72,27 +91,3 @@ function build_celslc_command(
     `celslc $input $output $pot_files $sli_files $proj $tla $ht $nxny $nz $rev $nv $ssc $dwf $abs`
 end
 
-"""
-function run_celslc(
-    config::Dict,
-    debug::Bool
-    )
-
-Build A CELSLC command from the configuration supplied, then run CELSLC.
-
-# Arguments
-- `config::Dict`: A dictionary containing configuration parameters.
-- `debug::Bool`: Flag for turning on debug mode
-
-# Returns
-- Nothing, but writes phase gratings/projected potentials to disk.
-"""
-function run_celslc(
-    config::Dict,
-    debug::Bool
-    )
-    celslc_command = build_celslc_command(config)
-    println("Running CELSLC with command: ")
-    println(celslc_command)
-    debug || run(celslc_command)
-end

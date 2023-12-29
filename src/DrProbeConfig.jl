@@ -22,42 +22,11 @@ of the configuration file to make sure it is correct and free of conflicting par
 # Args
 
 - `configuration-file`: configuration file for the calculation
-
-# Flags
-
-- `-d, --debug`: turn on debug mode, does not run any calculations
-- `-n, --no-cleanup`: skip cleaning up temporary files
-- `-m, --multithreaded`: turn on multithreaded mode
-
-# Options
-
-- `-o, --output-folder=<path>`: folder in which to place the output, pwd by default
-- `-t, --temporary-folder=<path>`: folder in which to place temporary files, pwd by default
-- `-s, --slice-file-folder=<path>`: folder containing slice files, only when CELSLC is disabled
 """
 @main function drprobe_config(
-    configuration_file::String;
-    output_folder::String = pwd(),
-    temporary_folder::String = pwd(),
-    slice_file_folder::String = pwd(),
-    debug::Bool = false,
-    no_cleanup::Bool = false, 
-    multithreaded::Bool = false
+    configuration_file::String
     )
-    if multithreaded && Threads.nthreads() == 1
-        throw(ArgumentError("multithreaded set to true, but nthreads == 1"))
-    else
-        run_drprobe(
-            configuration_file, 
-            output_folder=output_folder, 
-            temporary_folder=temporary_folder,
-	        slice_file_folder=slice_file_folder,
-            no_cleanup=no_cleanup, 
-            debug=debug,
-            multithreaded=multithreaded
-            )
-    end
-
+    run_drprobe(configuration_file)
 end
 
 end # module DrProbeConfig
