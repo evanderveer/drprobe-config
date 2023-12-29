@@ -67,6 +67,7 @@ function run_drprobe(
     if config["run-msa"]
         make_detector_prm_file(config)
         msa_function(config, debug)
+        msa_spatial_convolution(config)
     else
         println("MSA deactivated, only running CELSLC")
     end

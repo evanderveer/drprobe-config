@@ -264,6 +264,20 @@ function run_msa(
     debug || run(msa_command)
 end
 
+function msa_spatial_convolution(
+    config::Dict, 
+    debug::Bool
+    )
+    if !config["convolutions"]["source-size"]["activate"]
+        return
+    end
+    make_msa_prm_file(config)
+    msa_command = make_msa_command(config, true)
+    println("Applying source size convolution ")
+    println(msa_command)
+    debug || run(msa_command)
+end
+
 """
     run_msa_multithread(config::Dict, debug::Bool)
 
@@ -281,7 +295,19 @@ function run_msa_multithread(
     config::Dict,
     debug::Bool
     )
+    msa_function = debug ? iterate_lines_debug : iterate_lines
+    msa_function(config, false)
+    stitch_lines(config)
+end
+
+function msa_iterate_lines(config, debug)
     Threads.@threads for line_number in 1:config["scan-frame"]["resolution"]["y"]
+        msa_line(deepcopy(config), debug, line_number)
+    end
+end
+
+function msa_iterate_lines_debug(config, debug)
+    for line_number in 1:config["scan-frame"]["resolution"]["y"]
         msa_line(deepcopy(config), debug, line_number)
     end
 end
