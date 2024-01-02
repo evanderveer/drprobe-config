@@ -12,7 +12,7 @@
 """
 function msa(config::Dict)
 
-    if Threads.nthreads() == 1 || "test-multithreading" ∈ config["debug"]
+    if Threads.nthreads() == 1 
         run_msa_singlethreaded(config)
     else
         run_msa_multithreaded(config)
@@ -47,7 +47,12 @@ function run_msa_multithreaded(config::Dict)
     else
         msa_iterate_lines(config)
     end
-    "print-commands" ∈ config["debug"] || stitch_lines(config)
+
+    if "no-stitch" ∈ config["debug"] || "print-commands" ∈ config["debug"]
+         return
+    end
+
+    stitch_lines(config)
 end
 
 """
@@ -200,23 +205,23 @@ end
 
 """
     make_msa_command(
-        config::Dict, 
-        input::Bool = false
+        config::Dict;
+        input::String = ""
         )
 
     Generate the MSA command based on the given configuration.
 
     # Arguments
     - `config::Dict`: Dictionary containing configuration parameters.
-    - `input::Bool`: Flag indicating whether the MSA is for input data (default is false).
+    - `input::String`: Filename of an input file for source size convolution (optional)
 
     # Example
     ```julia
     make_msa_command(config, true)
 """
 function make_msa_command(
-    config::Dict, 
-    input::Bool = false
+    config::Dict;
+    input::String = ""
     )
 
     if haskey(config, "scan-line")
@@ -227,9 +232,9 @@ function make_msa_command(
         base_output = config["output"]
     end
 
-    out_file = input ? `-out $base_output-convoluted.dat` : `-out $base_output.dat`
+    out_file = input != "" ? `-out $input-convoluted.dat` : `-out $base_output.dat`
 
-    in_file = input ? `-in $base_output.dat` : ``
+    in_file = input != "" ? `-in $input` : ``
 
     beam_tilt = `-tx $(config["tilt"]["beam"]["x"]) -ty $(config["tilt"]["beam"]["y"])`
 
@@ -279,7 +284,7 @@ function make_detector_prm_file(
         detector_dict = config["detector"]["detectors"][detector]
         sensitivity_file = detector_dict["use-sensitivity"] ? detector_dict["sensitivity-file"] : ""
         detector_string = "$(detector_dict["inner-radius"]),$(detector_dict["outer-radius"]),\
-                           $(detector_dict["azimuth-start"]),$(detector_dict["azimuth-start"]),\
+                           $(detector_dict["azimuth-start"]),$(detector_dict["azimuth-end"]),\
                            $(detector_dict["x-center"]),$(detector_dict["y-center"]),\
                            '$detector','$sensitivity_file'\n"
         write(f, detector_string)
@@ -293,11 +298,19 @@ function msa_spatial_convolution(config::Dict)
     if !config["convolutions"]["source-size"]["activate"]
         return
     end
-    make_msa_prm_file(config)
-    msa_command = make_msa_command(config, true)
-    println("Applying source size convolution ")
-    println(msa_command)
-    "print-commands" ∈ config["debug"] || run(msa_command)
+
+    all_files = readdir()
+    output_regex = Regex(join([config["output"], raw"_.+_sl\d+\.dat"]))
+    output_files = all_files[occursin.(output_regex, all_files)]
+
+    for file in output_files
+
+        make_msa_prm_file(config)
+        msa_command = make_msa_command(config, input=file)
+        println("Applying source size convolution to file $file")
+        println(msa_command)
+        "print-commands" ∈ config["debug"] || run(msa_command)
+    end
 end
 
 function msa_iterate_lines(config)
@@ -307,6 +320,7 @@ function msa_iterate_lines(config)
 end
 
 function msa_iterate_lines_debug(config)
+    println("Running multithreading debug mode")
     for line_number in 1:config["scan-frame"]["resolution"]["y"]
         msa_line(deepcopy(config), line_number)
     end
@@ -331,7 +345,7 @@ function msa_line(
     )
 
     line_height = config["scan-frame"]["size"]["y"]/config["scan-frame"]["resolution"]["y"]
-    config["scan-frame"]["offset"]["y"] = (line_number-1)*line_height
+    config["scan-frame"]["offset"]["y"] += (line_number-1)*line_height
     config["scan-frame"]["size"]["y"] = line_height
     config["scan-frame"]["resolution"]["y"] = 1
     config["scan-line"] = line_number

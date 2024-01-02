@@ -5,7 +5,7 @@ include("msa.jl")
 include("image.jl")
 include("cellcalculator.jl")
 include("imageconstructor.jl")
-
+include("dpc.jl")
 
 const FILES_TO_KEEP = r"\.dat|\.sli|\.tif"
 
@@ -27,7 +27,8 @@ function run_drprobe(config_file::String)
     start_dir = abspath(pwd())
     config_file_dir = dirname(config_file)
     cd(config_file_dir == "" ? "." : config_file_dir)
-    config = check_config_file(YAML.load_file(basename(config_file)))
+    config = YAML.load_file(basename(config_file)) 
+    check_config_file(config)
 
     #Copy the input file (.cif/.cel) to the temporary folder
     cp(config["input"], joinpath(config["temporary-folder"], basename(config["input"])))
@@ -49,7 +50,11 @@ function run_drprobe(config_file::String)
         println("MSA deactivated, only running CELSLC")
     end
 
-    make_images(config)
+    try 
+        make_images(config)
+    catch
+        println("Could not make images")
+    end
 
     cd(start_dir)
     cleanup(config)
@@ -93,13 +98,17 @@ function cleanup(config::Dict)
                             )
 
     #Copy all files in debugging mode
-    files_to_move = "no-cleanup" ∈ config["debug"] ?  readdir() : files_to_move
+    files_to_move = "no-cleanup" ∈ config["debug"] ?  readdir(config["temporary-folder"]) : files_to_move
 
     for file in files_to_move
-        mv(
-           joinpath(config["temporary-folder"], file), 
-           joinpath(config["output-folder"], file)
-           )
+        try
+            mv(
+                joinpath(config["temporary-folder"], file), 
+                joinpath(config["output-folder"], file)
+              )
+        catch 
+            continue
+        end
     end 
 end
 

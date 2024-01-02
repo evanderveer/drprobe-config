@@ -41,20 +41,41 @@ Nothing, but writes stitched images to output files.
 function stitch_lines(
     config::Dict
     )
-    output_files = filter!(
-                            x -> occursin(data_file_name_pattern(config["output"]), x), 
-                            readdir()
-                            )
+
+    output_files = []
+    for file in readdir()
+        file_match = match(data_file_name_pattern(config["output"]), file)
+        if isnotnothing(file_match)
+            push!(output_files, file_match)
+        end
+    end
 
     detectors = Set(getindex.(output_files, 2))
     slice_nums = Set(getindex.(output_files, 3))
 
-    Threads.@threads for detector in detectors
-        for slice in slice_nums
+    if "test-multithreading" in config["debug"]
+        iterate_detectors_slices_debug(config, detectors, slice_nums)
+    else
+        iterate_detectors_slices(config, detectors, slice_nums)
+    end
+end
+
+function iterate_detectors_slices(config, detectors, slice_nums)
+    Threads.@threads for detector in collect(detectors)
+        for slice in collect(slice_nums)
             stitch_image(config, detector, slice)
         end
     end
 end
+
+function iterate_detectors_slices_debug(config, detectors, slice_nums)
+    for detector in collect(detectors)
+        for slice in collect(slice_nums)
+            stitch_image(config, detector, slice)
+        end
+    end
+end
+
 
 """
 stitch_image(
@@ -75,16 +96,15 @@ Nothing, but writes the stitched image to an output file.
 """
 function stitch_image(
     config::Dict,
-    detector::String,
-    slice::String
+    detector,
+    slice
     )
     output_size = (config["scan-frame"]["resolution"]["y"], 
                    config["scan-frame"]["resolution"]["x"])
     output_data = Matrix{Float32}(undef, output_size...)
 
     fill_image!(output_data, config, detector, slice)
-    
-
+ 
     out_filename = "$(config["output"])_$(detector)_sl$(slice).dat"
 
     write(out_filename, output_data)
@@ -111,12 +131,15 @@ Nothing, but modifies the `output_data` matrix in place.
 function fill_image!(
     output_data::AbstractMatrix{<:Real},
     config::Dict,
-    detector::String,
-    slice::String
+    detector,
+    slice
 )
     for line in 1:config["scan-frame"]["resolution"]["y"]
         line_filename = "$(config["output"])_$(line)_$(detector)_sl$(slice).dat"
-        read!(line_filename, output_data[:, line])
+        
+        f = open(line_filename)
+        output_data[line, :] .= readeach(f, Float32)
+        close(f)
         rm(line_filename)
     end
 end
