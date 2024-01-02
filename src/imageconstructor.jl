@@ -12,6 +12,9 @@ function make_images(
         output_filename = splitext(file)[1]*".tif"
         save(output_filename, image)
     end
+    if check_idpc(config)
+        make_idpc_images(config)
+    end
 end
 
 function make_image(
@@ -26,4 +29,19 @@ function make_image(
         dat ./= maximum(dat)
     end
     Gray.(dat)
+end
+
+#Check if iDPC image can be made
+function check_idpc(config::Dict)
+    detectors = keys(config["detector"]["detectors"])
+    for segment in ["A", "B", "C", "D"]
+        if !("DF4-"*segment ∈ detectors)
+            return false
+        end
+    end
+    return true
+end
+
+function make_idpc_images(config::Dict)
+    return
 end

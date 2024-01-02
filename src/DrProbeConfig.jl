@@ -6,6 +6,7 @@ using DelimitedFiles
 using LinearAlgebra
 using DataStructures
 using Images
+using FFTW
 
 export drprobe_config
 

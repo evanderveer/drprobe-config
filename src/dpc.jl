@@ -1,5 +1,3 @@
-using FFTW
-
 function construct_iDPC(
     images::Tuple{T, T, T, T},
     size_nm::Tuple{<:Real, <:Real}
