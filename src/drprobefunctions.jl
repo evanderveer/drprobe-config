@@ -6,8 +6,9 @@ include("image.jl")
 include("cellcalculator.jl")
 include("imageconstructor.jl")
 include("dpc.jl")
+include("cellbuilder.jl")
 
-const FILES_TO_KEEP = r"\.dat|\.sli|\.tif"
+const FILES_TO_KEEP = r"\.dat|\.sli|\.tif|\.cel|\.cif"
 
 """
     run_drprobe(config_file::String)
@@ -33,27 +34,27 @@ function run_drprobe(config_file::String)
     #Copy the input file (.cif/.cel) to the temporary folder
     cp(config["input"], joinpath(config["temporary-folder"], basename(config["input"])))
 
-    if config["run-celslc"]
-        cd(config["temporary-folder"])
-        celslc(config)
-    else
+
+    if !config["run-celslc"]
         println("CELSLC disabled, looking for slice files")
         link_slice_files(config)
-        cd(config["temporary-folder"])
     end
+    cd(config["temporary-folder"])
+    println("Running CellBuilder")
+    config = cellbuilder(config)
+    if config["run-celslc"]; celslc(config); end;
 
     if config["run-msa"]
         make_detector_prm_file(config)
         msa(config)
         msa_spatial_convolution(config)
+        try 
+            make_images(config)
+        catch
+            println("Could not make images")
+        end
     else
         println("MSA deactivated, only running CELSLC")
-    end
-
-    try 
-        make_images(config)
-    catch
-        println("Could not make images")
     end
 
     cd(start_dir)

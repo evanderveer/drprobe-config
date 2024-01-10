@@ -26,6 +26,30 @@ temporary-folder: ""
 slice-file-folder: ""
 
 #--------------------------------#
+# CellBuilder
+#--------------------------------#
+
+#Zone axis for the simulation
+zone-axis: [1,0,0]
+
+#Use a block of the specified size instead of a unit cell
+make-block:
+    activate: false
+    block-size: 
+        x: 1 #nm
+        y: 1 #nm
+        z: 1 #nm
+
+#Angle tolerance for cell orthogonalization
+tolerance: 1
+
+#Maximum number of iterations for cell orthogonalization
+iteration-limit: 10000000
+
+#Highest index axis to consider in orthogonalization
+index-limit: 100
+
+#--------------------------------#
 # CELSLC
 #--------------------------------#
 
@@ -37,7 +61,7 @@ export-potentials:
     as-pot-files: false
     as-sli-files: false
 
-#Projection axis
+#Projection axis. Deprecated, use CellBuilder above
 projection:
     activate: false
     axis: [1,0,0]
