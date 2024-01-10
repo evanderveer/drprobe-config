@@ -255,8 +255,9 @@ function make_msa_command(
     verbose = config["verbose"] ? `/verbose` : ``
     debug = config["msa-debug"] ? `/debug` : ``
     silent = config["silent"] ? `/silent` : ``
+    load_ondemand = config["load-slices-on-demand"] ? `/slod` : ``
 
-    `msa $prm_file $out_file $in_file $beam_tilt $ctem $text_output $three_d_output $wave $detimg $lapro $dftest $verbose $debug $silent`
+    `msa $prm_file $out_file $in_file $beam_tilt $ctem $text_output $three_d_output $wave $detimg $lapro $dftest $verbose $debug $silent $load_ondemand`
 end
 
 """

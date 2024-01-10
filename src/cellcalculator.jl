@@ -173,7 +173,7 @@ end
 
 """
     find_orthogonal_cell(
-        zone_axis::Vector{<:Int},
+
         cell_parameters::CellParameters;
         tolerance::Real = 1,
         max_iterations::Int = 10_000_000
