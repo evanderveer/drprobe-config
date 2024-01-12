@@ -17,8 +17,8 @@ function cellbuilder(config)
         config["zone-axis"], 
         cell_parameters,
         tolerance=config["tolerance"], 
-        max_iterations=config["iteration-limit"], 
-        max_index=config["index-limit"]
+        maximum_iterations=config["iteration-limit"], 
+        maximum_index=config["index-limit"]
         )
     
     new_basis = transform_basis(basis, CoBmatrix)
@@ -26,6 +26,9 @@ function cellbuilder(config)
 
     temp_cel_file = config["output"] * "_cellbuilder.cel"
     save_cell(temp_cel_file, new_cp, new_basis)
+
+    config["input"] = temp_cel_file
+    temp_cel_file = config["output"] * "_final.cel"
 
     run(`cellmuncher --input=$(config["input"]) --output=$temp_cel_file --cif`)
     config["input"] = temp_cel_file

@@ -51,7 +51,7 @@ function run_msa_multithreaded(config::Dict)
     if "no-stitch" ∈ config["debug"] || "print-commands" ∈ config["debug"]
          return
     end
-
+    println("Stitching lines")
     stitch_lines(config)
 end
 

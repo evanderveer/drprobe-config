@@ -29,13 +29,14 @@ function run_drprobe(config_file::String)
     config_file_dir = dirname(config_file)
     cd(config_file_dir == "" ? "." : config_file_dir)
     config = YAML.load_file(basename(config_file)) 
+    println("Using config file $(basename(config_file)) in $config_file_dir")
     check_config_file(config)
 
     #Copy the input file (.cif/.cel) to the temporary folder
     cp(config["input"], joinpath(config["temporary-folder"], basename(config["input"])))
 
 
-    if !config["run-celslc"]
+    if !config["run-celslc"] && config["run-msa"]
         println("CELSLC disabled, looking for slice files")
         link_slice_files(config)
     end
@@ -47,12 +48,15 @@ function run_drprobe(config_file::String)
     if config["run-msa"]
         make_detector_prm_file(config)
         msa(config)
+
+        println("Applying spatial convolution")
         msa_spatial_convolution(config)
         try 
             make_images(config)
         catch
             println("Could not make images")
         end
+ 
     else
         println("MSA deactivated, only running CELSLC")
     end
