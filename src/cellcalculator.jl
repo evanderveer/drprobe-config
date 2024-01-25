@@ -60,6 +60,14 @@ function change_to_orthonormal_basis(
     CoBmatrix * vector
 end
 
+function change_to_orthonormal_basis(
+    matrix::Matrix{<:Real}, 
+    cell_parameters::CellParameters
+    )
+    CoBmatrix = orthonormal_basis_matrix(cell_parameters)
+    CoBmatrix * matrix'
+end
+
 """
     change_from_orthonormal_basis(vector::Vector{<:Real}, cell_parameters::CellParameters)
     Transform a vector from the orthonormal basis back to the lattice vector basis.
@@ -401,9 +409,10 @@ function new_cell_parameters(
     CoBmatrix::AbstractMatrix{<:Real}
     )
     (; a, b, c, α, β, γ) = cell_parameters
+    CoBmatrix_ortho = change_to_orthonormal_basis(CoBmatrix, cell_parameters)
 
     #Basically McKie, p. 163
-    lattice_parameters = round.(sqrt.(CoBmatrix .^2 * [a, b, c] .^ 2)', digits=5)
+    lattice_parameters = round.(sqrt.(CoBmatrix_ortho .^2 * [a, b, c] .^ 2)', digits=5)
     #Now pretend that all angles are 90°
     CellParameters(lattice_parameters..., 90, 90, 90)
 end
