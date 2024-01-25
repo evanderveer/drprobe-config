@@ -6,7 +6,7 @@ using DelimitedFiles
 using LinearAlgebra
 using DataStructures
 using Images
-using FFTW
+using DifferentialPhaseContrast
 
 export drprobe_config
 

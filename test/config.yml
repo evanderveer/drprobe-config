@@ -178,13 +178,40 @@ detector:
         DF4-A: 
             inner-radius: 30.0 #mrad
             outer-radius: 70.0 #mrad
-            azimuth-start: 0.0 #deg
-            azimuth-end: 90.0 #deg
+            azimuth-start: 315.0 #deg
+            azimuth-end: 405.0 #deg
             x-center: 0.0 #mrad
             y-center: 0.0 #mrad
             use-sensitivity: false
             sensitivity-file: detector-sensitivity-df4-a.txt
-            
+        DF4-B: 
+            inner-radius: 30.0 #mrad
+            outer-radius: 70.0 #mrad
+            azimuth-start: 45.0 #deg
+            azimuth-end: 135.0 #deg
+            x-center: 0.0 #mrad
+            y-center: 0.0 #mrad
+            use-sensitivity: false
+            sensitivity-file: detector-sensitivity-df4-a.txt
+        DF4-C: 
+            inner-radius: 30.0 #mrad
+            outer-radius: 70.0 #mrad
+            azimuth-start: 135.0 #deg
+            azimuth-end: 225.0 #deg
+            x-center: 0.0 #mrad
+            y-center: 0.0 #mrad
+            use-sensitivity: false
+            sensitivity-file: detector-sensitivity-df4-a.txt
+        DF4-D: 
+            inner-radius: 30.0 #mrad
+            outer-radius: 70.0 #mrad
+            azimuth-start: 225.0 #deg
+            azimuth-end: 315.0 #deg
+            x-center: 0.0 #mrad
+            y-center: 0.0 #mrad
+            use-sensitivity: false
+            sensitivity-file: detector-sensitivity-df4-a.txt
+               
 #Effective source radius for spatial coherence 
 source-radius: 0.055 #nm
 
@@ -260,9 +287,9 @@ minimum-frozen-lattice-variants: 5
 
 #Readout period
 readout-period: 
-    one-unit-cell: true
+    one-unit-cell: falsee
     full-thickness-only: false
-    fixed-number: 5 #slices
+    fixed-number: 100 #slices
 
 #Total thickness to simulate
-final-thickness: 10 #unit cells
+final-thickness: 100 #unit cells

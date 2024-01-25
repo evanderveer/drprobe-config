@@ -5,7 +5,6 @@ include("msa.jl")
 include("image.jl")
 include("cellcalculator.jl")
 include("imageconstructor.jl")
-include("dpc.jl")
 include("cellbuilder.jl")
 
 const FILES_TO_KEEP = r"\.dat|\.sli|\.tif|\.cel|\.cif"
@@ -23,15 +22,33 @@ const FILES_TO_KEEP = r"\.dat|\.sli|\.tif|\.cel|\.cif"
     run_drprobe("./config.yml")
 """
 function run_drprobe(config_file::String)
-
     #Make paths absolute to prevent problems later
     start_dir = abspath(pwd())
     config_file_dir = dirname(config_file)
     cd(config_file_dir == "" ? "." : config_file_dir)
     config = YAML.load_file(basename(config_file)) 
     println("Using config file $(basename(config_file)) in $config_file_dir")
-    check_config_file(config)
+    check_config(config)
 
+    run_config(config)
+
+    cd(start_dir)
+    cleanup(config)
+end
+
+function run_drprobe(config::Dict)
+    #Make paths absolute to prevent problems later
+    start_dir = abspath(pwd())
+    check_config(config)
+
+    run_config(config)
+
+    cd(start_dir)
+    cleanup(config)
+end
+
+function run_config(config::Dict)
+    
     #Copy the input file (.cif/.cel) to the temporary folder
     cp(config["input"], joinpath(config["temporary-folder"], basename(config["input"])))
 
@@ -60,13 +77,9 @@ function run_drprobe(config_file::String)
     else
         println("MSA deactivated, only running CELSLC")
     end
-
-    cd(start_dir)
-    cleanup(config)
-
 end
 
-function check_config_file(config::Dict)
+function check_config(config::Dict)
 
     config["temporary-folder"] = config["temporary-folder"] == "" ? "." : config["temporary-folder"]
     config["temporary-folder"] = abspath(mktempdir(config["temporary-folder"]))
