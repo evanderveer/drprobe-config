@@ -6,9 +6,9 @@ quiet=false
 compile="min"
 optimize=2
 
-[sysimg]
-incremental=false
+# [sysimg]
+# incremental=false
 
-[application]
-incremental=false
-filter_stdlibs=false
+# [application]
+# incremental=false
+# filter_stdlibs=false
