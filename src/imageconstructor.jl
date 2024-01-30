@@ -2,36 +2,21 @@ function make_images(
         config::Dict
     )
     all_files = readdir()
-    files_to_convert = all_files[occursin.(r"sl\d+\.dat", all_files)]
+    files_to_convert = all_files[occursin.(r".dat$", all_files)]
 
     println("Converting data files to images: ")
     for f in files_to_convert; println(f); end;
     
     for file in files_to_convert
-        image = make_image(file, 
-                           (config["scan-frame"]["resolution"]["y"], 
-                            config["scan-frame"]["resolution"]["x"]), 
-                            true)
+        data = open_data_as_matrix(config, file)
+        image = Gray.(normalize_image(data))
+
         output_filename = splitext(file)[1]*".tif"
         save(output_filename, image)
     end
     if check_idpc(config)
         make_idpc_images(config)
     end
-end
-
-function make_image(
-    name::String,
-    size::Tuple{<:Int, <:Int}, 
-    stretch::Bool
-    )
-    dat = Matrix{Float32}(undef, size...)
-    read!(name, dat)
-    if stretch
-        dat .-= minimum(dat)
-        dat ./= maximum(dat)
-    end
-    Gray.(dat)
 end
 
 #Check if iDPC image can be made
@@ -46,13 +31,13 @@ function check_idpc(config::Dict)
 end
 
 function image_filename(config, slice_num, segment, conv)
-    conv_string = conv ? ".dat-convoluted" : ""
-    "$(config["output"])_DF4-$(segment)_sl$slice_num$conv_string.tif"
+    conv_string = conv ? "_convoluted" : ""
+    "$(config["output"])_DF4-$(segment)_sl$slice_num$conv_string"
 end
 
 function make_idpc_images(config::Dict)
     all_files = readdir()
-    matches = match.(r"DF4-[A-D]_sl(\d+)(\.dat-convoluted)?\.tif", all_files)
+    matches = match.(r"DF4-[A-D]_sl(\d+)(_convoluted)?\.tif", all_files)
     ipdc_to_convert = matches[isnotnothing.(matches)]
 
     slice_nums = Set(getindex.(ipdc_to_convert, 1))
@@ -67,20 +52,42 @@ function make_idpc_images(config::Dict)
 end
 
 function make_idpc_slice(config, slice_num, convoluted)
-    image_size = (config["scan-frame"]["resolution"]["y"], 
-                  config["scan-frame"]["resolution"]["x"])
     images = []
     for segment in ["A", "B", "C", "D"]
-        image = Matrix{Float32}(undef, image_size...)
-        fn = image_filename(config, slice_num, segment, convoluted)
+        fn = image_filename(config, slice_num, segment, convoluted) * ".dat"
         println("Processing $fn")
-        f = open(fn)
-        read!(f, image)
-        close(f)
-        push!(images, image)
+        image_data = open_data_as_matrix(config, fn)
+        push!(images, image_data)
     end
-    idpc,ddpc = dpc(images...)
-    save(image_filename(config, slice_num, "iDPC", convoluted), idpc)
-    save(image_filename(config, slice_num, "dDPC", convoluted), ddpc)
 
+    #Not sure why the order needs to be this
+    idpc, ddpc = dpc(images..., order=[1,4,3,2])
+    save(image_filename(config, slice_num, "iDPC", convoluted) * ".tif", clamp01nan.(idpc))
+    save(image_filename(config, slice_num, "dDPC", convoluted) * ".tif", clamp01nan.(ddpc))
+
+end
+
+function normalize_image(
+    image::Matrix{<:Real}
+    )
+    image_shifted = image .- minimum(image)
+    image_shifted ./ maximum(image_shifted)
+end
+
+function tile_image(
+    image::AbstractMatrix{T},
+    factor::Tuple{<:Int, <:Int}
+) where T
+
+    image_size = size(image)
+    new_image = Matrix{T}(undef, (image_size .* factor)...)
+    for i in 1:factor[1]
+    for j in 1:factor[2]
+        im_start = image_size .* (i-1, j-1)
+        im_end = image_size .* (i, j)
+
+        new_image[im_start[1]+1:im_end[1], im_start[2]+1:im_end[2]] = image
+    end
+    end
+    new_image
 end

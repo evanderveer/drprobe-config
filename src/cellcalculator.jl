@@ -61,11 +61,11 @@ function change_to_orthonormal_basis(
 end
 
 function change_to_orthonormal_basis(
-    matrix::Matrix{<:Real}, 
+    matrix::AbstractMatrix{<:Real}, 
     cell_parameters::CellParameters
     )
     CoBmatrix = orthonormal_basis_matrix(cell_parameters)
-    CoBmatrix * matrix'
+    matrix * CoBmatrix
 end
 
 """
@@ -391,9 +391,9 @@ end
 function filter_positions(
     positions::AbstractVecOrMat
     )
-    positions[2:4, :] .= round.(positions[2:4, :], digits=5)
+    positions[2:4, :] .= round.(positions[2:4, :], digits=3)
 
-    positions_inside_unit_cell = positions[:, [all(0 .<= position[2:4] .<= 1) 
+    positions_inside_unit_cell = positions[:, [all(0 .<= position[2:4] .< 1) 
                                                for position in eachcol(positions)]]
     positions_without_duplicates = []
     for position in eachcol(positions_inside_unit_cell)
@@ -409,10 +409,10 @@ function new_cell_parameters(
     CoBmatrix::AbstractMatrix{<:Real}
     )
     (; a, b, c, α, β, γ) = cell_parameters
-    CoBmatrix_ortho = change_to_orthonormal_basis(CoBmatrix, cell_parameters)
+    CoBmatrix_ortho = CoBmatrix * orthonormal_basis_matrix(cell_parameters)'
 
-    #Basically McKie, p. 163
-    lattice_parameters = round.(sqrt.(CoBmatrix_ortho .^2 * [a, b, c] .^ 2)', digits=5)
+    lattice_parameters = [round(sqrt(sum(row .^ 2)), digits=5) for row in eachrow(CoBmatrix_ortho)]
+    
     #Now pretend that all angles are 90°
     CellParameters(lattice_parameters..., 90, 90, 90)
 end

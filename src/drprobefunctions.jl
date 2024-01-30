@@ -6,8 +6,9 @@ include("image.jl")
 include("cellcalculator.jl")
 include("imageconstructor.jl")
 include("cellbuilder.jl")
+include("spatialcoherence.jl")
 
-const FILES_TO_KEEP = r"\.dat|\.sli|\.tif|\.cel|\.cif"
+const FILES_TO_KEEP = r"\.dat|\.tif|\.cel|\.cif"
 
 """
     run_drprobe(config_file::String)
@@ -81,8 +82,9 @@ end
 
 function check_config(config::Dict)
 
-    config["temporary-folder"] = config["temporary-folder"] == "" ? "." : config["temporary-folder"]
+    config["temporary-folder"] = config["temporary-folder"] == "" ? ENV["TMPDIR"] : config["temporary-folder"]
     config["temporary-folder"] = abspath(mktempdir(config["temporary-folder"]))
+    println("Using temporary folder $(config["temporary-folder"])")
 
     config["slice-file-folder"] = config["slice-file-folder"] == "" ? "." : config["slice-file-folder"]
     config["slice-file-folder"] = abspath(config["slice-file-folder"])
@@ -148,3 +150,23 @@ function link_slice_files(config::Dict)
     end
 end
 
+function open_data_as_matrix(
+    config::Dict,
+    filename::String
+)
+    resolution = (config["scan-frame"]["resolution"]["y"], config["scan-frame"]["resolution"]["x"])
+    output = Matrix{Float32}(undef, resolution...)
+    f = open(filename)
+    read!(f, output)
+    close(f)
+    output
+end
+
+function write_matrix_as_data(
+    matrix::AbstractMatrix{<:Real},
+    filename::String
+)
+    f = open(filename, "w")
+    write(f, matrix)
+    close(f)
+end

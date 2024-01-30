@@ -32,5 +32,22 @@ function cellbuilder(config)
 
     run(`cellmuncher --input=$(config["input"]) --output=$temp_cel_file --cif`)
     config["input"] = temp_cel_file
+
+    if config["scan-frame"]["size"]["auto-detect"]
+        ysize, xsize = get_size_from_cel(temp_cel_file)
+        config["scan-frame"]["size"]["y"] = ysize
+        config["scan-frame"]["size"]["x"] = xsize
+    end
+
     config #Return the config 
+end
+
+function get_size_from_cel(cel_file)
+    f = open(cel_file)
+    
+    readline(f) #Ignore the first line of the file
+    parameters = [s for s in split(readline(f), " ") if (s != "" && s != " ")]
+    close(f)
+    xsize, ysize = parse.(Float64, parameters[2:3])
+    return ysize, xsize
 end

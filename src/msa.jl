@@ -12,6 +12,8 @@
 """
 function msa(config::Dict)
 
+    resolution_from_pixel_size(config)
+
     if Threads.nthreads() == 1 
         run_msa_singlethreaded(config)
     else
@@ -151,6 +153,22 @@ function make_msa_prm_file(config::Dict)
     end
 
     close(f)
+end
+
+function resolution_from_pixel_size(config)
+    frame_size_x = config["scan-frame"]["size"]["x"]
+    frame_size_y = config["scan-frame"]["size"]["y"]
+
+    pixel_size_x = config["scan-frame"]["pixel-size"]["x"]
+    pixel_size_y = config["scan-frame"]["pixel-size"]["y"]
+
+    yres = frame_size_y / pixel_size_y
+    xres = frame_size_x / pixel_size_x
+
+    config["scan-frame"]["resolution"] = Dict("x"=>0, "y"=>0)
+
+    config["scan-frame"]["resolution"]["x"] = round(Int, xres)
+    config["scan-frame"]["resolution"]["y"] = round(Int, yres)
 end
 
 """
@@ -306,11 +324,11 @@ function msa_spatial_convolution(config::Dict)
 
     for file in output_files
 
-        make_msa_prm_file(config)
-        msa_command = make_msa_command(config, input=file)
         println("Applying source size convolution to file $file")
-        println(msa_command)
-        "print-commands" ∈ config["debug"] || run(msa_command)
+        data = open_data_as_matrix(config, file)
+        data_conv = apply_spatial_coherence(config, data)
+        filename_conv = splitext(file)[1] * "_convoluted.dat"
+        write_matrix_as_data(data_conv, filename_conv)
     end
 end
 
