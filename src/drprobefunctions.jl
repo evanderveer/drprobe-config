@@ -1,12 +1,12 @@
 using YAML 
 
-include("celslc.jl")
-include("msa.jl")
-include("image.jl")
-include("cellcalculator.jl")
-include("imageconstructor.jl")
-include("cellbuilder.jl")
-include("spatialcoherence.jl")
+include("CELSLC/celslc.jl")
+include("MSA/msa.jl")
+include("MSA/image_stitching.jl")
+include("CellBuilder/cellcalculator.jl")
+include("ImageProcessing/imageconstructor.jl")
+include("CellBuilder/cellbuilder.jl")
+include("ImageProcessing/spatialcoherence.jl")
 
 const FILES_TO_KEEP = r"\.dat|\.tif|\.cel|\.cif"
 
@@ -153,7 +153,7 @@ end
 function open_data_as_matrix(
     config::Dict,
     filename::String
-)
+    )
     resolution = (config["scan-frame"]["resolution"]["y"], config["scan-frame"]["resolution"]["x"])
     output = Matrix{Float32}(undef, resolution...)
     f = open(filename)
@@ -165,8 +165,21 @@ end
 function write_matrix_as_data(
     matrix::AbstractMatrix{<:Real},
     filename::String
-)
+    )
     f = open(filename, "w")
     write(f, matrix)
     close(f)
 end
+
+"""
+    isnotnothing(value) = isnothing(value) |> !
+
+    Check if the given value is not nothing.
+
+    # Arguments
+    - `value`: The value to check.
+
+    # Returns
+    `true` if the value is not nothing, `false` otherwise.
+"""
+isnotnothing(value) = isnothing(value) |> !

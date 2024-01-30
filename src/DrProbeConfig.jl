@@ -10,7 +10,7 @@ using DifferentialPhaseContrast
 using OffsetArrays: Origin
 using ImageFiltering
 
-export drprobe_config
+export run_drprobe
 
 include("drprobefunctions.jl")
 
