@@ -167,8 +167,8 @@ function resolution_from_pixel_size(config)
 
     config["scan-frame"]["resolution"] = Dict("x"=>0, "y"=>0)
 
-    config["scan-frame"]["resolution"]["x"] = round(Int, xres)
-    config["scan-frame"]["resolution"]["y"] = round(Int, yres)
+    config["scan-frame"]["resolution"]["x"] = clamp(round(Int, xres), 1, Inf)
+    config["scan-frame"]["resolution"]["y"] = clamp(round(Int, yres), 1, Inf)
 end
 
 """
@@ -275,7 +275,7 @@ function make_msa_command(
     silent = config["silent"] ? `/silent` : ``
     load_ondemand = config["load-slices-on-demand"] ? `/slod` : ``
 
-    `msa $prm_file $out_file $in_file $beam_tilt $ctem $text_output $three_d_output $wave $detimg $lapro $dftest $verbose $debug $silent $load_ondemand`
+    `$MSA $prm_file $out_file $in_file $beam_tilt $ctem $text_output $three_d_output $wave $detimg $lapro $dftest $verbose $debug $silent $load_ondemand`
 end
 
 """

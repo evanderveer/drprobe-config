@@ -88,5 +88,5 @@ function build_celslc_command(
         abs = ``
     end
 
-    `celslc $input $output $pot_files $sli_files $proj $tla $ht $nxny $nz $rev $nv $ssc $dwf $abs`
+    `$CELSLC $input $output $pot_files $sli_files $proj $tla $ht $nxny $nz $rev $nv $ssc $dwf $abs`
 end

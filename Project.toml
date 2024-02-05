@@ -1,9 +1,10 @@
 name = "DrProbeConfig"
 uuid = "0a6cd471-1257-429e-b8c0-364a01e6572b"
 authors = ["Ewout van der Veer"]
-version = "0.4.0"
+version = "0.5.0"
 
 [deps]
+Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 Comonicon = "863f3e99-da2a-4334-8734-de3dacbe5542"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -14,5 +15,4 @@ ImageFiltering = "6a3955dd-da59-5b1f-98d4-e7296123deb5"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
-Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"

@@ -5,11 +5,11 @@ function cellbuilder(config)
     end
     if occursin(r"\.cif$", config["input"])
         temp_cel_file = config["output"] * "_buildcell.cel"
-        run(`buildcell --cif=$(config["input"]) --output=$temp_cel_file`)
+        run(`$BUILDCELL --cif=$(config["input"]) --output=$temp_cel_file`)
         config["input"] = temp_cel_file
     end
     temp_cel_file = config["output"] * "_cellmuncher.cel"
-    run(`cellmuncher --input=$(config["input"]) --output=$temp_cel_file --cif`)
+    run(`$CELLMUNCHER --input=$(config["input"]) --output=$temp_cel_file --cif`)
     config["input"] = temp_cel_file
 
     cell_parameters, basis = load_cell(config["input"])
@@ -30,7 +30,7 @@ function cellbuilder(config)
     config["input"] = temp_cel_file
     temp_cel_file = config["output"] * "_final.cel"
 
-    run(`cellmuncher --input=$(config["input"]) --output=$temp_cel_file --cif`)
+    run(`$CELLMUNCHER --input=$(config["input"]) --output=$temp_cel_file --cif`)
     config["input"] = temp_cel_file
 
     if config["scan-frame"]["size"]["auto-detect"]

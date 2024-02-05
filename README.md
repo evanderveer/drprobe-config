@@ -3,24 +3,19 @@
 A user-friendly front-end for the command line tools associated with the DrProbe software package for multislice simulations, written by Dr. Juri Barthel. `drprobe-config` can be used either as a standalone CLI command or as a Julia module. In either case, the parameters for the calculation are supplied through a configuration file in YAML format. An example configuration file is available in the `example` folder. A major benefit of `drprobe-config` is that it supports parallel computation which greatly speeds up any calculation when many cores are available (e.g. on a computing cluster). 
 
 ## Installation
-Clone the GitHub repo:
-```
-git clone https://github.com/evanderveer/drprobe-config
-```
-
-`drprobe-config` requires that the DrProbe command line tools be available on the system. If necessary they can be installed by running:
+Make sure Julia is available on your system. If necessary, it can be downloaded [here](https://julialang.org/downloads/). Next, create a new Julia environment (`] activate <path>`) and add the DrProbeConfig package using 
 
 ```
-> julia ./drprobe-config/deps/install_drprobe_cli.jl
-```
-which will place them in `~/.local/bin`.
-
-To make the CLI command available, run:
-
-```
-julia --project=./drprobe-config ./drprobe-config/deps/build.jl install
+] add https://github.com/evanderveer/drprobe-config#main
 ```
 
+This will automatically install the `drprobe-config` CLI tool to `~/.julia/bin`. If necessary, add 
+
+```
+export PATH=$PATH:~/.julia/bin
+```
+
+to your `~/.bash_profile` file. 
 
 ## Usage
 `drprobe-config` can be used in two ways: as a CLI command or as a Julia module.

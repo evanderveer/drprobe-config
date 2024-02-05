@@ -1,0 +1,6 @@
+[binaries]
+git-tree-sha1 = "ca7328ee882ee01edffcd1cdc1f079816d2b7e45"
+
+    [[binaries.download]]
+    sha256 = "6a1e98e0e681d2ace1f410cad87c0b0618c50a0df69b8b8a644e46d2d098741b"
+    url = "https://gist.github.com/evanderveer/39b4ab54c7f75db65e7e89ad214f8958/raw/ca7328ee882ee01edffcd1cdc1f079816d2b7e45.tar.gz"

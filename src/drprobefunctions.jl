@@ -1,4 +1,5 @@
 using YAML 
+using Artifacts
 
 include("CELSLC/celslc.jl")
 include("MSA/msa.jl")
@@ -9,6 +10,12 @@ include("CellBuilder/cellbuilder.jl")
 include("ImageProcessing/spatialcoherence.jl")
 
 const FILES_TO_KEEP = r"\.dat|\.tif|\.cel|\.cif"
+
+const BUILDCELL = joinpath(artifact"binaries", "buildcell")
+const CELLMUNCHER = joinpath(artifact"binaries", "cellmuncher")
+const MSA = joinpath(artifact"binaries", "msa")
+const CELSLC = joinpath(artifact"binaries", "celslc")
+const WAVIMG = joinpath(artifact"binaries", "wavimg")
 
 """
     run_drprobe(config_file::String)
