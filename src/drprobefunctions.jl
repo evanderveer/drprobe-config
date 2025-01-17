@@ -9,7 +9,8 @@ include("ImageProcessing/imageconstructor.jl")
 include("CellBuilder/cellbuilder.jl")
 include("ImageProcessing/spatialcoherence.jl")
 
-const FILES_TO_KEEP = r"\.dat|\.tif|\.cel|\.cif"
+const FILES_TO_KEEP_NO_SLICES = r"\.dat|\.tif|\.cel|\.cif"
+const FILES_TO_KEEP = r"\.dat|\.tif|\.cel|\.cif|\.sli"
 
 const BUILDCELL = joinpath(artifact"binaries", "buildcell")
 const CELLMUNCHER = joinpath(artifact"binaries", "cellmuncher")
@@ -119,8 +120,10 @@ function cleanup(config::Dict)
     config["output-folder"] = mkdir(joinpath(config["output-folder"], string(now())))
     println("Output folder: $(config["output-folder"])")
 
+    file_copy_filter = config["run-msa"] ? FILES_TO_KEEP_NO_SLICES : FILES_TO_KEEP
+
     files_to_move = filter!(
-                            x -> occursin(FILES_TO_KEEP, x), 
+                            x -> occursin(file_copy_filter, x), 
                             readdir(config["temporary-folder"])
                             )
 
