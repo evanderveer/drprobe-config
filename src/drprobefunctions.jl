@@ -90,7 +90,7 @@ end
 
 function check_config(config::Dict)
 
-    config["temporary-folder"] = config["temporary-folder"] == "" ? ENV["TMPDIR"] : config["temporary-folder"]
+    config["temporary-folder"] = config["temporary-folder"] == "" ? tempdir() : config["temporary-folder"]
     config["temporary-folder"] = abspath(mktempdir(config["temporary-folder"]))
     println("Using temporary folder $(config["temporary-folder"])")
 
