@@ -13,7 +13,7 @@
 function msa(config::Dict)
 
     resolution_from_pixel_size(config)
-
+    println("Number of scan lines: $(config["scan-frame"]["resolution"]["y"])")
     if Threads.nthreads() == 1 
         run_msa_singlethreaded(config)
     else
